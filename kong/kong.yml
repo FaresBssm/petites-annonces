@@ -1,0 +1,16 @@
+# Configuration déclarative de Kong OSS en mode DB-less (KONG_DATABASE=off).
+# Tout l'état de la gateway tient dans ce fichier versionné (GW-11) : pas de base, pas d'Admin API exposée.
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: annonces-backend
+    url: http://backend:8081
+    routes:
+      - name: api
+        paths:
+          - /api
+        # Le backend expose lui-même ses endpoints sous /api : le chemin est transmis tel quel
+        strip_path: false
+        # Le backend reçoit Host: backend:8081 ; l'URL publique lui parvient via X-Forwarded-*
+        preserve_host: false

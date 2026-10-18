@@ -88,6 +88,38 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  gateway:
+    # Image officielle, édition open source, sans build (GW-11)
+    image: kong:3.9.4
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+      # Admin API limitée à l'intérieur du conteneur et jamais publiée sur l'hôte (GW-10)
+      KONG_ADMIN_LISTEN: 127.0.0.1:8001
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+    volumes:
+      - ./kong/kong.yml:/kong/declarative/kong.yml:ro
+    ports:
+      # Seul le proxy est publié : localhost:8080 -> 8000
+      - "8080:8000"
+    networks:
+      - public
+      - internal
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
 networks:
   # Côté navigateur : frontend, gateway, keycloak
   public:

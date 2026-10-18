@@ -285,7 +285,7 @@ Choix de versions (tags exacts vérifiés/épinglés à l'étape qui les introdu
 - Backend : **Spring Boot 3.5.16**, Java 21 ; build `maven:3.9.9-eclipse-temurin-21-alpine`, runtime `eclipse-temurin:21-jre-alpine`
   (épinglé étape 6 ; package `com.petitesannonces`).
 - Frontend : **Angular 19** + **`angular-oauth2-oidc`** ; build `node:22-alpine`, runtime `nginx:*-alpine`.
-- Keycloak : `quay.io/keycloak/keycloak:26.8.1` (épinglé étape 3 ; 1er démarrage ≈ 76 s, à surveiller pour DEP-01 < 3 min). Kong : `kong:3.9` (dernière ligne OSS 3.x, à confirmer). PostgreSQL : `postgres:16-alpine`.
+- Keycloak : `quay.io/keycloak/keycloak:26.8.1` (épinglé étape 3 ; 1er démarrage ≈ 76 s, à surveiller pour DEP-01 < 3 min). Kong : `kong:3.9.4` (dernière version OSS 3.x, épinglée étape 11). PostgreSQL : `postgres:16-alpine`.
 
 ---
 
@@ -349,7 +349,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
       _Test : tests d'intégration._ [MT-05, MT-06, MT-07, BK-04]
 
 ### Phase D — Gateway Kong
-- [ ] **11. Kong DB-less de base** — `kong/kong.yml` (service `annonces-backend`, route `/api`), image officielle,
+- [x] **11. Kong DB-less de base** — `kong/kong.yml` (service `annonces-backend`, route `/api`), image officielle,
       healthcheck `kong health`, Admin API non publiée.
       _Test : `curl localhost:8080/api/me` → 401 renvoyé par le backend ; `localhost:8001` injoignable._ [GW-10, GW-11✱]
 - [ ] **12. Plugin `jwt`** — consumer `keycloak-annonces`, credential RS256 avec la clé publique PEM.
