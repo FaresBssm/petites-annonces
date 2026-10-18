@@ -42,7 +42,16 @@ Admin API de Kong (8001) : **jamais publiée**.
 | `MODERATEUR` | lecture USER + lister les annonces en attente, publier/rejeter, supprimer n'importe quelle annonce | USER |
 | `ADMIN` | tout MODERATEUR + créer/supprimer des catégories | MODERATEUR (+ USER) |
 
-Utilisateurs de test : `alice`, `bob` (USER), `modo` (MODERATEUR), `admin` (ADMIN).
+Utilisateurs de test de l'énoncé : `alice`, `bob` (USER), `modo` (MODERATEUR), `admin` (ADMIN).
+
+**Nos utilisateurs de test (choix du binôme)** — les critères citant alice/bob/modo s'appliquent à :
+
+| Énoncé | Projet | Rôle | Mot de passe (`.env`) |
+|---|---|---|---|
+| alice | **fares** | USER | `REALM_FARES_PASSWORD` |
+| bob | **juba** | USER | `REALM_JUBA_PASSWORD` |
+| modo | **mahdi** | MODERATEUR | `REALM_MAHDI_PASSWORD` |
+| admin | **admin** | ADMIN | `REALM_ADMIN_PASSWORD` |
 
 ### Modèle de données
 | Entité | Champs | Règles |
@@ -144,6 +153,11 @@ Cycle de vie : `EN_ATTENTE` → `PUBLIEE` ou `REJETEE`. Toute modification par l
     `docker compose ps` (colonne ports = `5432/tcp`, sans `0.0.0.0:`) ou arrêter ce PostgreSQL WSL avant la démo
     (`wsl -d Ubuntu -- sudo service postgresql stop`).
   - `postgres/init.sql` ne s'exécute qu'au premier démarrage (volume vide) : après modification → `docker compose down -v`.
+  - `--import-realm` utilise la stratégie IGNORE_EXISTING : un realm déjà en base n'est **pas** réimporté. Après modification de
+    `realm-annonces.json` → supprimer le realm (console) puis redémarrer keycloak, ou `docker compose down -v`.
+  - Keycloak 26 (user profile déclaratif) : sans `email`/`firstName`/`lastName`, le login affiche « Update account information »
+    → les utilisateurs du realm ont ces champs renseignés.
+  - PowerShell 5.1 : `Invoke-WebRequest` gère mal les 302 et les corps d'erreur → utiliser `curl.exe` pour les tests HTTP.
 
 ### Livrables
 - Arborescence : `frontend/`, `backend/`, `kong/kong.yml`, `kong/plugins/identity-headers/` (`handler.lua`, `schema.lua`),
@@ -298,7 +312,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - [x] **3. Keycloak démarré** — service `keycloak` `start-dev` sur PostgreSQL, `KC_HOSTNAME=http://localhost:8180`,
       admin bootstrap via `.env`, healthcheck, `depends_on: service_healthy`.
       _Test : console sur `localhost:8180`, `.well-known/openid-configuration` du master._ [DEP-03✱]
-- [ ] **4. Realm `annonces`** — `realm-annonces.json` importé : rôles composites, client `annonces-front`
+- [x] **4. Realm `annonces`** — `realm-annonces.json` importé : rôles composites, client `annonces-front`
       (public, standard flow seul, PKCE S256), token 5 min, 4 utilisateurs.
       _Test : discovery `iss` = `http://localhost:8180/realms/annonces` ; `grant_type=password` refusé ; console._ [DEP-03, KC-04]
 - [ ] **5. Paire RSA fixe + script de token** — génération d'une paire RSA, composant `rsa` dans le realm, extraction du PEM
@@ -355,6 +369,6 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - [ ] **23. (Optionnel) Bonus** — vérification `azp`, `correlation-id`, secret partagé Kong→backend, etc.
 
 ### Questions ouvertes (à trancher avant l'étape concernée)
-- **Q1 (étapes 4–5) — secrets du realm** : la clé privée RSA et les mots de passe des utilisateurs de test sont des secrets,
-  mais DEP-01 exige que `.env` copié depuis `.env.example` fonctionne sans action manuelle.
+- ~~**Q1 — secrets du realm**~~ → **tranché (option A)** : placeholders `${VAR}` dans `realm-annonces.json`, substitués par
+  Keycloak à l'import depuis l'environnement du conteneur ; valeurs de démo dans `.env.example`. Vaut aussi pour la clé privée RSA (étape 5).
 - **Q2 (étape 5) — obtention de tokens pour les tests curl** : le password grant est interdit sur `annonces-front` (KC-04).

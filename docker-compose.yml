@@ -27,8 +27,17 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.1
-    command: start-dev
+    # --import-realm : importe /opt/keycloak/data/import/*.json au démarrage,
+    # uniquement si le realm n'existe pas encore en base.
+    command: start-dev --import-realm
+    volumes:
+      - ./keycloak/realm-annonces.json:/opt/keycloak/data/import/realm-annonces.json:ro
     environment:
+      # Mots de passe des utilisateurs de test, substitués dans le realm à l'import
+      REALM_FARES_PASSWORD: ${REALM_FARES_PASSWORD}
+      REALM_JUBA_PASSWORD: ${REALM_JUBA_PASSWORD}
+      REALM_MAHDI_PASSWORD: ${REALM_MAHDI_PASSWORD}
+      REALM_ADMIN_PASSWORD: ${REALM_ADMIN_PASSWORD}
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER}

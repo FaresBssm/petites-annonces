@@ -1,0 +1,97 @@
+{
+  "realm": "annonces",
+  "displayName": "PetitesAnnonces",
+  "enabled": true,
+  "sslRequired": "external",
+  "accessTokenLifespan": 300,
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": false,
+  "bruteForceProtected": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "USER",
+        "description": "Consulter les annonces publiées, gérer ses propres annonces"
+      },
+      {
+        "name": "MODERATEUR",
+        "description": "USER + publier, rejeter, supprimer n'importe quelle annonce",
+        "composite": true,
+        "composites": { "realm": ["USER"] }
+      },
+      {
+        "name": "ADMIN",
+        "description": "MODERATEUR + gérer les catégories",
+        "composite": true,
+        "composites": { "realm": ["MODERATEUR"] }
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "annonces-front",
+      "name": "PetitesAnnonces - SPA Angular",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "rootUrl": "http://localhost:4200",
+      "baseUrl": "/",
+      "redirectUris": ["http://localhost:4200/*"],
+      "webOrigins": ["http://localhost:4200"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:4200/*",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "oidc.ciba.grant.enabled": "false",
+        "standard.token.exchange.enabled": "false"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "fares",
+      "enabled": true,
+      "email": "fares@petites-annonces.local",
+      "emailVerified": true,
+      "firstName": "Fares",
+      "lastName": "Utilisateur",
+      "credentials": [{ "type": "password", "value": "${REALM_FARES_PASSWORD}", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "username": "juba",
+      "enabled": true,
+      "email": "juba@petites-annonces.local",
+      "emailVerified": true,
+      "firstName": "Juba",
+      "lastName": "Utilisateur",
+      "credentials": [{ "type": "password", "value": "${REALM_JUBA_PASSWORD}", "temporary": false }],
+      "realmRoles": ["USER"]
+    },
+    {
+      "username": "mahdi",
+      "enabled": true,
+      "email": "mahdi@petites-annonces.local",
+      "emailVerified": true,
+      "firstName": "Mahdi",
+      "lastName": "Moderateur",
+      "credentials": [{ "type": "password", "value": "${REALM_MAHDI_PASSWORD}", "temporary": false }],
+      "realmRoles": ["MODERATEUR"]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@petites-annonces.local",
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "Annonces",
+      "credentials": [{ "type": "password", "value": "${REALM_ADMIN_PASSWORD}", "temporary": false }],
+      "realmRoles": ["ADMIN"]
+    }
+  ]
+}
