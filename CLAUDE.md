@@ -315,7 +315,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - [x] **4. Realm `annonces`** — `realm-annonces.json` importé : rôles composites, client `annonces-front`
       (public, standard flow seul, PKCE S256), token 5 min, 4 utilisateurs.
       _Test : discovery `iss` = `http://localhost:8180/realms/annonces` ; `grant_type=password` refusé ; console._ [DEP-03, KC-04]
-- [ ] **5. Paire RSA fixe + script de token** — génération d'une paire RSA, composant `rsa` dans le realm, extraction du PEM
+- [x] **5. Paire RSA fixe + script de token** — génération d'une paire RSA, composant `rsa` dans le realm, extraction du PEM
       public (procédure documentée) ; script `scripts/get-token.sh` qui réalise le flux code + PKCE en curl.
       _Test : `docker compose down -v && up` → même `kid`/clé dans le JWKS ; token de modo décodé._ [KC-05, DEP-04✱]
 
@@ -371,4 +371,12 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 ### Questions ouvertes (à trancher avant l'étape concernée)
 - ~~**Q1 — secrets du realm**~~ → **tranché (option A)** : placeholders `${VAR}` dans `realm-annonces.json`, substitués par
   Keycloak à l'import depuis l'environnement du conteneur ; valeurs de démo dans `.env.example`. Vaut aussi pour la clé privée RSA (étape 5).
-- **Q2 (étape 5) — obtention de tokens pour les tests curl** : le password grant est interdit sur `annonces-front` (KC-04).
+- ~~**Q2 — tokens pour les tests curl**~~ → **tranché** : `scripts/get-token.ps1` rejoue le flux code + PKCE (formulaire de
+  login soumis en curl), aucun client supplémentaire dans le realm.
+
+### Repères techniques acquis
+- Clé RSA fixe : `kid` = `ZQQpF_vzump2o6y58OCaHCsp60Vs2i1DQycq9mDe5AU`, clé publique = `keycloak/realm-public-key.pem`
+  (stable après `down`/`up` et `down -v`/`up`).
+- Les tokens n'ont pas de `default-roles-annonces` dans `realm_access.roles` (rôles assignés explicitement à l'import) :
+  fares → `USER` ; mahdi → `MODERATEUR,USER` ; admin → `ADMIN,MODERATEUR,USER`. Pas de claim `aud`.
+- Démarrage complet postgres + keycloak depuis zéro : ≈ 68 s.

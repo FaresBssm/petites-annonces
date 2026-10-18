@@ -38,6 +38,8 @@ services:
       REALM_JUBA_PASSWORD: ${REALM_JUBA_PASSWORD}
       REALM_MAHDI_PASSWORD: ${REALM_MAHDI_PASSWORD}
       REALM_ADMIN_PASSWORD: ${REALM_ADMIN_PASSWORD}
+      # Clé privée RSA fixe du realm : la clé publique est figée dans kong.yml
+      REALM_RSA_PRIVATE_KEY: ${REALM_RSA_PRIVATE_KEY}
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER}

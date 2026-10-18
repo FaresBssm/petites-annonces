@@ -7,6 +7,24 @@
   "registrationAllowed": false,
   "loginWithEmailAllowed": false,
   "bruteForceProtected": true,
+  "defaultSignatureAlgorithm": "RS256",
+  "components": {
+    "org.keycloak.keys.KeyProvider": [
+      {
+        "name": "rsa-fixe-annonces",
+        "providerId": "rsa",
+        "subComponents": {},
+        "config": {
+          "priority": ["200"],
+          "enabled": ["true"],
+          "active": ["true"],
+          "algorithm": ["RS256"],
+          "keyUse": ["SIG"],
+          "privateKey": ["${REALM_RSA_PRIVATE_KEY}"]
+        }
+      }
+    ]
+  },
   "roles": {
     "realm": [
       {
