@@ -72,33 +72,33 @@
   ],
   "users": [
     {
-      "username": "fares",
+      "username": "alice",
       "enabled": true,
-      "email": "fares@petites-annonces.local",
+      "email": "alice@petites-annonces.local",
       "emailVerified": true,
-      "firstName": "Fares",
+      "firstName": "Alice",
       "lastName": "Utilisateur",
-      "credentials": [{ "type": "password", "value": "${REALM_FARES_PASSWORD}", "temporary": false }],
+      "credentials": [{ "type": "password", "value": "${REALM_ALICE_PASSWORD}", "temporary": false }],
       "realmRoles": ["USER"]
     },
     {
-      "username": "juba",
+      "username": "bob",
       "enabled": true,
-      "email": "juba@petites-annonces.local",
+      "email": "bob@petites-annonces.local",
       "emailVerified": true,
-      "firstName": "Juba",
+      "firstName": "Bob",
       "lastName": "Utilisateur",
-      "credentials": [{ "type": "password", "value": "${REALM_JUBA_PASSWORD}", "temporary": false }],
+      "credentials": [{ "type": "password", "value": "${REALM_BOB_PASSWORD}", "temporary": false }],
       "realmRoles": ["USER"]
     },
     {
-      "username": "mahdi",
+      "username": "modo",
       "enabled": true,
-      "email": "mahdi@petites-annonces.local",
+      "email": "modo@petites-annonces.local",
       "emailVerified": true,
-      "firstName": "Mahdi",
+      "firstName": "Modo",
       "lastName": "Moderateur",
-      "credentials": [{ "type": "password", "value": "${REALM_MAHDI_PASSWORD}", "temporary": false }],
+      "credentials": [{ "type": "password", "value": "${REALM_MODO_PASSWORD}", "temporary": false }],
       "realmRoles": ["MODERATEUR"]
     },
     {

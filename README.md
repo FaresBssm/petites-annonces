@@ -24,20 +24,20 @@ docker compose up -d --build
 
 Mots de passe définis dans `.env` (valeurs de démo dans `.env.example`).
 
-| Utilisateur | Rôle(s) effectif(s) | Équivalent énoncé |
+| Utilisateur | Rôle attribué | Rôles effectifs (composites) |
 |---|---|---|
-| `fares` | USER | alice |
-| `juba` | USER | bob |
-| `mahdi` | MODERATEUR, USER | modo |
-| `admin` | ADMIN, MODERATEUR, USER | admin |
+| `alice` | USER | USER |
+| `bob` | USER | USER |
+| `modo` | MODERATEUR | MODERATEUR, USER |
+| `admin` | ADMIN | ADMIN, MODERATEUR, USER |
 
 Console d'administration Keycloak : http://localhost:8180 (compte `KC_BOOTSTRAP_ADMIN_*` du `.env`).
 
 Obtenir un access token en ligne de commande (rejoue le flux Authorization Code + PKCE, le password grant étant interdit) :
 
 ```powershell
-.\scripts\get-token.ps1 -User fares          # affiche le token
-.\scripts\get-token.ps1 -User mahdi -Show    # + header et payload décodés
+.\scripts\get-token.ps1 -User alice         # affiche le token
+.\scripts\get-token.ps1 -User modo -Show     # + header et payload décodés
 ```
 
 ## Clé de signature du realm

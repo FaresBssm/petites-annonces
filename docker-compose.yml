@@ -34,9 +34,9 @@ services:
       - ./keycloak/realm-annonces.json:/opt/keycloak/data/import/realm-annonces.json:ro
     environment:
       # Mots de passe des utilisateurs de test, substitués dans le realm à l'import
-      REALM_FARES_PASSWORD: ${REALM_FARES_PASSWORD}
-      REALM_JUBA_PASSWORD: ${REALM_JUBA_PASSWORD}
-      REALM_MAHDI_PASSWORD: ${REALM_MAHDI_PASSWORD}
+      REALM_ALICE_PASSWORD: ${REALM_ALICE_PASSWORD}
+      REALM_BOB_PASSWORD: ${REALM_BOB_PASSWORD}
+      REALM_MODO_PASSWORD: ${REALM_MODO_PASSWORD}
       REALM_ADMIN_PASSWORD: ${REALM_ADMIN_PASSWORD}
       # Clé privée RSA fixe du realm : la clé publique est figée dans kong.yml
       REALM_RSA_PRIVATE_KEY: ${REALM_RSA_PRIVATE_KEY}

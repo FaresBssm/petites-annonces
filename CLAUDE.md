@@ -42,16 +42,14 @@ Admin API de Kong (8001) : **jamais publiée**.
 | `MODERATEUR` | lecture USER + lister les annonces en attente, publier/rejeter, supprimer n'importe quelle annonce | USER |
 | `ADMIN` | tout MODERATEUR + créer/supprimer des catégories | MODERATEUR (+ USER) |
 
-Utilisateurs de test de l'énoncé : `alice`, `bob` (USER), `modo` (MODERATEUR), `admin` (ADMIN).
+Utilisateurs de test (noms de l'énoncé, conservés tels quels) :
 
-**Nos utilisateurs de test (choix du binôme)** — les critères citant alice/bob/modo s'appliquent à :
-
-| Énoncé | Projet | Rôle | Mot de passe (`.env`) |
-|---|---|---|---|
-| alice | **fares** | USER | `REALM_FARES_PASSWORD` |
-| bob | **juba** | USER | `REALM_JUBA_PASSWORD` |
-| modo | **mahdi** | MODERATEUR | `REALM_MAHDI_PASSWORD` |
-| admin | **admin** | ADMIN | `REALM_ADMIN_PASSWORD` |
+| Utilisateur | Rôle | Mot de passe (`.env`) |
+|---|---|---|
+| `alice` | USER | `REALM_ALICE_PASSWORD` |
+| `bob` | USER | `REALM_BOB_PASSWORD` |
+| `modo` | MODERATEUR | `REALM_MODO_PASSWORD` |
+| `admin` | ADMIN | `REALM_ADMIN_PASSWORD` |
 
 ### Modèle de données
 | Entité | Champs | Règles |
@@ -378,5 +376,5 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - Clé RSA fixe : `kid` = `ZQQpF_vzump2o6y58OCaHCsp60Vs2i1DQycq9mDe5AU`, clé publique = `keycloak/realm-public-key.pem`
   (stable après `down`/`up` et `down -v`/`up`).
 - Les tokens n'ont pas de `default-roles-annonces` dans `realm_access.roles` (rôles assignés explicitement à l'import) :
-  fares → `USER` ; mahdi → `MODERATEUR,USER` ; admin → `ADMIN,MODERATEUR,USER`. Pas de claim `aud`.
+  alice → `USER` ; modo → `MODERATEUR,USER` ; admin → `ADMIN,MODERATEUR,USER`. Pas de claim `aud`.
 - Démarrage complet postgres + keycloak depuis zéro : ≈ 68 s.

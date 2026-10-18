@@ -12,8 +12,8 @@
     4. echange le code + code_verifier sur /token               -> access_token, refresh_token
 
 .EXAMPLE
-  .\scripts\get-token.ps1 -User fares                  # affiche le token (mot de passe lu dans .env)
-  $t = .\scripts\get-token.ps1 -User mahdi -Show       # stocke le token, affiche header + payload decodes
+  .\scripts\get-token.ps1 -User alice                  # affiche le token (mot de passe lu dans .env)
+  $t = .\scripts\get-token.ps1 -User modo -Show       # stocke le token, affiche header + payload decodes
   .\scripts\get-token.ps1 -User admin -Full            # reponse /token complete (refresh_token, expires_in...)
 #>
 param(
