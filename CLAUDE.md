@@ -359,7 +359,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - [x] **14. CORS + rate limiting** — plugins `cors` et `rate-limiting`.
       _Test : preflight evil.local ; 4ᵉ appel → 429 + `Retry-After` ; bob non bloqué ; OPTIONS non décomptés._
       [GW-09, RL-01→RL-05]
-- [ ] **15. Script de test gateway + collection** — `scripts/test-gateway.sh` (et/ou collection Bruno) couvrant GW, RL, MT.
+- [x] **15. Script de test gateway + collection** — `scripts/test-gateway.sh` (et/ou collection Bruno) couvrant GW, RL, MT.
       _Test : exécution complète du script._ [livrable]
 
 ### Phase E — Frontend
@@ -428,3 +428,8 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - **Rate limiting** : fenêtre fixe par minute d'horloge (`Retry-After` = secondes jusqu'à la minute suivante) ;
   le budget de 3 appels/min est partagé par TOUS les endpoints /api/** d'un utilisateur → le front doit être économe
   (ne pas appeler /api/me au démarrage : les rôles des menus viennent du token).
+- `scripts/test-gateway.ps1` : 27 vérifications (GW-01→11, RL-01→05 + RL-02b CORS du 429, MT-01→10) à travers Kong,
+  ~4 min (attentes Retry-After). `-Sections GW,RL,MT` pour n'en jouer qu'une partie.
+- `KONG_PORT_MAPS=8080:8000` : sans lui, X-Forwarded-Port = 8000 et la Location du 201 pointe sur un port interne.
+- PowerShell 5.1 : `[Text.Encoding]::UTF8` ajoute un **BOM** aux données envoyées à un exe natif (JSON → 400) ;
+  utiliser `New-Object System.Text.UTF8Encoding $false`.

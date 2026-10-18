@@ -97,6 +97,9 @@ services:
       # Plugins livrés avec Kong OSS + notre plugin Lua monté par volume
       KONG_PLUGINS: bundled,identity-headers
       KONG_PROXY_LISTEN: 0.0.0.0:8000
+      # Port vu par le client (hôte:conteneur) : X-Forwarded-Port = 8080 et non 8000,
+      # pour que le backend construise des URL publiques correctes (Location du 201)
+      KONG_PORT_MAPS: "8080:8000"
       # Admin API limitée à l'intérieur du conteneur et jamais publiée sur l'hôte (GW-10)
       KONG_ADMIN_LISTEN: 127.0.0.1:8001
       KONG_PROXY_ACCESS_LOG: /dev/stdout
