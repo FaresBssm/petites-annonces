@@ -257,7 +257,7 @@ Grille : DEP 15 · KC 15 · FR 15 · GW 20 · RL 10 · BK 10 · MT 10 · Qualit�
 Choix de versions (tags exacts vérifiés/épinglés à l'étape qui les introduit) :
 - Backend : **Spring Boot 3.5.x**, Java 21 ; build `maven:3.9-eclipse-temurin-21`, runtime `eclipse-temurin:21-jre-alpine`.
 - Frontend : **Angular 19** + **`angular-oauth2-oidc`** ; build `node:22-alpine`, runtime `nginx:*-alpine`.
-- Keycloak : `quay.io/keycloak/keycloak:26.x`. Kong : `kong:3.9` (dernière ligne OSS 3.x, à confirmer). PostgreSQL : `postgres:16-alpine`.
+- Keycloak : `quay.io/keycloak/keycloak:26.8.1` (épinglé étape 3 ; 1er démarrage ≈ 76 s, à surveiller pour DEP-01 < 3 min). Kong : `kong:3.9` (dernière ligne OSS 3.x, à confirmer). PostgreSQL : `postgres:16-alpine`.
 
 ---
 
@@ -295,7 +295,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
       _Test : `docker compose up -d postgres` → healthy ; `psql \l` ; port 5432 fermé depuis l'hôte._ [DEP-02✱, DEP-05✱]
 
 ### Phase B — Keycloak
-- [ ] **3. Keycloak démarré** — service `keycloak` `start-dev` sur PostgreSQL, `KC_HOSTNAME=http://localhost:8180`,
+- [x] **3. Keycloak démarré** — service `keycloak` `start-dev` sur PostgreSQL, `KC_HOSTNAME=http://localhost:8180`,
       admin bootstrap via `.env`, healthcheck, `depends_on: service_healthy`.
       _Test : console sur `localhost:8180`, `.well-known/openid-configuration` du master._ [DEP-03✱]
 - [ ] **4. Realm `annonces`** — `realm-annonces.json` importé : rôles composites, client `annonces-front`
