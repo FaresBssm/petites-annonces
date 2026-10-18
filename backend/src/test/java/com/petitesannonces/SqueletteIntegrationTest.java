@@ -44,8 +44,8 @@ class SqueletteIntegrationTest {
     }
 
     @Test
-    void toutLeResteEstFermeParDefaut() throws Exception {
+    void apiSansIdentiteRefusee() throws Exception {
         mockMvc.perform(get("/api/annonces"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 }

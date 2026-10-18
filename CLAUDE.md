@@ -328,7 +328,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - [x] **6. Squelette backend** — projet Spring Boot 3.5 / Java 21 (Web, Security, JPA, Validation, Flyway, Actuator),
       migrations Flyway V1 (schéma + 4 catégories), Dockerfile multi-stage, service `backend` sur `internal` uniquement.
       _Test : `mvnw verify` ; conteneur healthy ; `localhost:8081` injoignable._ [BK-01, DEP-02]
-- [ ] **7. Sécurité par headers** — `OncePerRequestFilter`, config stateless, `@EnableMethodSecurity`, 401/403 en
+- [x] **7. Sécurité par headers** — `OncePerRequestFilter`, config stateless, `@EnableMethodSecurity`, 401/403 en
       `ProblemDetail`, `GET /api/me`, log debug des headers reçus. Tests Testcontainers.
       _Test : tests d'intégration verts._ [BK-02, BK-03, BK-05, GW-08✱]
 - [ ] **8. Catégories** — entité, repo, service, contrôleur, `@PreAuthorize`, validation, 409 si utilisée.
@@ -385,3 +385,11 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - Les tokens n'ont pas de `default-roles-annonces` dans `realm_access.roles` (rôles assignés explicitement à l'import) :
   alice → `USER` ; modo → `MODERATEUR,USER` ; admin → `ADMIN,MODERATEUR,USER`. Pas de claim `aud`.
 - Démarrage complet postgres + keycloak depuis zéro : ≈ 68 s.
+- **Chemins** : le backend expose ses endpoints **avec** le préfixe `/api` → la route Kong `/api` devra avoir
+  `strip_path: false` (mêmes URL de bout en bout).
+- Authentification backend = `PreAuthenticatedAuthenticationToken` (identité authentifiée en amont par la gateway),
+  posée par `HeaderAuthenticationFilter` (avant `AnonymousAuthenticationFilter`) ; X_ROLE_ID filtré sur USER/MODERATEUR/ADMIN.
+- 401/403 Spring Security → `SecurityProblemHandler` (ProblemDetail) ; erreurs MVC → `spring.mvc.problemdetails.enabled`.
+  Le dispatch ERROR est en `permitAll`, sinon une erreur 400/500 se transformerait en 401.
+- Tester le backend « de l'intérieur » (comme Kong) :
+  `docker run --rm --network petites-annonces_internal curlimages/curl:8.11.1 -s -H "X_USER_ID: u1" -H "X_ROLE_ID: USER" http://backend:8081/api/me`

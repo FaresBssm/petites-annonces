@@ -16,6 +16,15 @@ spring:
     open-in-view: false
   flyway:
     locations: classpath:db/migration
+  mvc:
+    # Erreurs Spring MVC (400, 404, 405...) au format ProblemDetail (RFC 9457)
+    problemdetails:
+      enabled: true
+
+logging:
+  level:
+    # Trace des headers reçus de la gateway (GW-01, GW-08)
+    com.petitesannonces.security.HeaderAuthenticationFilter: DEBUG
 
 management:
   endpoints:
