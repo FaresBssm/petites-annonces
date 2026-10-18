@@ -1,0 +1,12 @@
+# Fins de ligne LF partout : les fichiers montés dans les conteneurs Linux
+# (scripts shell, Lua, SQL, nginx.conf) cassent avec des CRLF.
+* text=auto eol=lf
+
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+*.pdf binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.jar binary
