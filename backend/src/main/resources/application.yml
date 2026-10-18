@@ -1,0 +1,28 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: petites-annonces-backend
+  datasource:
+    # Valeurs fournies par docker-compose (depuis .env) ; défauts pour un lancement local
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/annonces}
+    username: ${DB_USER:annonces}
+    password: ${DB_PASSWORD:}
+  jpa:
+    # Le schéma appartient à Flyway : Hibernate vérifie, ne modifie jamais
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true

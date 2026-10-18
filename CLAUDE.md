@@ -146,6 +146,12 @@ Cycle de vie : `EN_ATTENTE` → `PUBLIEE` ou `REJETEE`. Toute modification par l
   - `rate-limiting` avec `limit_by: header` : si le header manque, Kong se rabat sur l'IP → `identity-headers` doit tourner avant (priorité).
   - Le 429 et le 401 générés par Kong doivent eux aussi porter les headers CORS, sinon le front ne lit pas `Retry-After`.
   - Le port 8080 est utilisé par l'appli `demofares` lancée dans IntelliJ → l'arrêter avant `docker compose up`.
+    Une 2ᵉ instance de `demofares` (JDK 17) écoute aussi sur **8081** : pour démontrer DEP-02, arrêter toutes les instances
+    de demofares, sinon `localhost:8081` répond (ce n'est pas notre backend : `docker compose ps` → `8081/tcp` non publié).
+  - Premier `docker compose build` du backend ≈ 3 min (téléchargement Maven), puis cache Docker. DEP-01 (« healthy en < 3 min »)
+    sera mesuré à l'étape 21 ; si besoin, préconstruire les images (`docker compose build`) avant la démo.
+  - Build local du backend en Java 21 : `$env:JAVA_HOME="$HOME\.jdks\corretto-21.0.4"; .\mvnw verify` (dans `backend/`).
+  - Testcontainers 1.21.4 (géré par Spring Boot 3.5.16) fonctionne avec Docker Engine 29 : pas de surcharge nécessaire.
   - Un PostgreSQL tourne dans la distribution WSL **Ubuntu** et écoute sur `127.0.0.1:5432` (relayé par `wslrelay.exe`) :
     un test du port 5432 depuis Windows répond donc, même stack arrêtée. Pour DEP-02, prouver avec
     `docker compose ps` (colonne ports = `5432/tcp`, sans `0.0.0.0:`) ou arrêter ce PostgreSQL WSL avant la démo
@@ -267,7 +273,8 @@ Grille : DEP 15 · KC 15 · FR 15 · GW 20 · RL 10 · BK 10 · MT 10 · Qualit�
 | Ports | 4200 libre, 8180 libre, **8080 occupé** (appli demofares IntelliJ) | 4200/8080/8180 | arrêter demofares avant les tests Kong |
 
 Choix de versions (tags exacts vérifiés/épinglés à l'étape qui les introduit) :
-- Backend : **Spring Boot 3.5.x**, Java 21 ; build `maven:3.9-eclipse-temurin-21`, runtime `eclipse-temurin:21-jre-alpine`.
+- Backend : **Spring Boot 3.5.16**, Java 21 ; build `maven:3.9.9-eclipse-temurin-21-alpine`, runtime `eclipse-temurin:21-jre-alpine`
+  (épinglé étape 6 ; package `com.petitesannonces`).
 - Frontend : **Angular 19** + **`angular-oauth2-oidc`** ; build `node:22-alpine`, runtime `nginx:*-alpine`.
 - Keycloak : `quay.io/keycloak/keycloak:26.8.1` (épinglé étape 3 ; 1er démarrage ≈ 76 s, à surveiller pour DEP-01 < 3 min). Kong : `kong:3.9` (dernière ligne OSS 3.x, à confirmer). PostgreSQL : `postgres:16-alpine`.
 
@@ -318,7 +325,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
       _Test : `docker compose down -v && up` → même `kid`/clé dans le JWKS ; token de modo décodé._ [KC-05, DEP-04✱]
 
 ### Phase C — Backend
-- [ ] **6. Squelette backend** — projet Spring Boot 3.5 / Java 21 (Web, Security, JPA, Validation, Flyway, Actuator),
+- [x] **6. Squelette backend** — projet Spring Boot 3.5 / Java 21 (Web, Security, JPA, Validation, Flyway, Actuator),
       migrations Flyway V1 (schéma + 4 catégories), Dockerfile multi-stage, service `backend` sur `internal` uniquement.
       _Test : `mvnw verify` ; conteneur healthy ; `localhost:8081` injoignable._ [BK-01, DEP-02]
 - [ ] **7. Sécurité par headers** — `OncePerRequestFilter`, config stateless, `@EnableMethodSecurity`, 401/403 en
