@@ -354,7 +354,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
       _Test : `curl localhost:8080/api/me` → 401 renvoyé par le backend ; `localhost:8001` injoignable._ [GW-10, GW-11✱]
 - [x] **12. Plugin `jwt`** — consumer `keycloak-annonces`, credential RS256 avec la clé publique PEM.
       _Test : token absent / altéré / expiré / autre émetteur → 401 ; valide → passe._ [GW-01, GW-02, GW-03, GW-04]
-- [ ] **13. Plugin Lua `identity-headers`** — `handler.lua` + `schema.lua`, priorité ~1000, montage par volume.
+- [x] **13. Plugin Lua `identity-headers`** — `handler.lua` + `schema.lua`, priorité ~1000, montage par volume.
       _Test : `/api/me` d'alice ; headers forgés ignorés ; logs backend sans `Authorization`._ [GW-05, GW-06, GW-07, GW-08, GW-11]
 - [ ] **14. CORS + rate limiting** — plugins `cors` et `rate-limiting`.
       _Test : preflight evil.local ; 4ᵉ appel → 429 + `Retry-After` ; bob non bloqué ; OPTIONS non décomptés._
@@ -420,3 +420,6 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
   autre émetteur → `No credentials found for given 'iss'`.
 - `scripts/forge-jwt.ps1` fabrique des tokens de test (expiré, autre iss, autre clé). PowerShell 5.1 : `Get-Date -UFormat %s`
   renvoie l'heure **locale** → toujours utiliser `[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()` pour `iat`/`exp`.
+- `identity-headers` (priorité 1000) lit le token déposé par `jwt` dans `kong.ctx.shared.authenticated_jwt_token`, le décode
+  avec `kong.plugins.jwt.jwt_parser`, pose X_USER_ID / X_ROLE_ID, retire Authorization. **Bonus azp** actif
+  (`client_attendu: annonces-front`). Monté dans `/usr/local/share/lua/5.1/kong/plugins/identity-headers`.

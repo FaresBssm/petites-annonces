@@ -18,6 +18,7 @@ param(
   [string]$Subject = "sub-forge",
   [string[]]$Roles = @("USER"),
   [int]$ExpiresIn = 300,
+  [string]$Azp = "annonces-front",
   [switch]$RealmKey
 )
 $ErrorActionPreference = "Stop"
@@ -50,7 +51,7 @@ try {
   $now = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
   $header = @{ alg = "RS256"; typ = "JWT" } | ConvertTo-Json -Compress
   $payload = [ordered]@{
-    iss = $Issuer; sub = $Subject; azp = "annonces-front"; typ = "Bearer"
+    iss = $Issuer; sub = $Subject; azp = $Azp; typ = "Bearer"
     iat = $now; exp = $now + $ExpiresIn
     realm_access = @{ roles = $Roles }
   } | ConvertTo-Json -Compress -Depth 5

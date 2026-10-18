@@ -32,6 +32,17 @@ services:
               # Les preflight OPTIONS ne portent jamais de token (traités par le plugin cors)
               run_on_preflight: false
 
+          # Plugin maison (kong/plugins/identity-headers, priorité 1000) : supprime les headers
+          # d'identité forgés, pose X_USER_ID (sub) et X_ROLE_ID (rôles du realm), retire Authorization.
+          - name: identity-headers
+            config:
+              roles_autorises:
+                - USER
+                - MODERATEUR
+                - ADMIN
+              # Bonus : seul un token émis pour la SPA est accepté (claim azp)
+              client_attendu: annonces-front
+
 consumers:
   - username: keycloak-annonces
     jwt_secrets:
