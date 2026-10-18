@@ -16,6 +16,32 @@ services:
         # Le backend reçoit Host: backend:8081 ; l'URL publique lui parvient via X-Forwarded-*
         preserve_host: false
         plugins:
+          # CORS (priorité 2000, avant tout le reste) : seule la SPA peut lire les réponses de l'API.
+          # Les preflight OPTIONS sont traités et terminés ici : ni authentifiés, ni décomptés (RL-05).
+          - name: cors
+            config:
+              # Regex ancrée et non texte simple : avec UNE origine en texte simple, Kong renvoie cette
+              # origine à tout le monde sans comparer ; une regex est comparée à l'Origin reçue, et
+              # aucun Access-Control-Allow-Origin n'est renvoyé à une autre origine (GW-09).
+              origins:
+                - ^http://localhost:4200$
+              methods:
+                - GET
+                - POST
+                - PUT
+                - PATCH
+                - DELETE
+              headers:
+                - Authorization
+                - Content-Type
+              # Lisibles par le JavaScript du front : délai d'un 429 (FR-05), URL d'une ressource créée
+              exposed_headers:
+                - Retry-After
+                - Location
+              credentials: false
+              max_age: 600
+              preflight_continue: false
+
           # Validation du token (GW-01 à GW-04) : le plugin jwt de Kong OSS ne lit pas le JWKS,
           # la clé publique du realm est figée dans le credential du consumer ci-dessous.
           - name: jwt
@@ -42,6 +68,17 @@ services:
                 - ADMIN
               # Bonus : seul un token émis pour la SPA est accepté (claim azp)
               client_attendu: annonces-front
+
+          # 3 appels / minute PAR UTILISATEUR (compteur indexé sur X_USER_ID posé par identity-headers),
+          # sur tous les endpoints /api/**. Au-delà : 429 + Retry-After, le backend n'est pas appelé.
+          - name: rate-limiting
+            config:
+              minute: 3
+              policy: local
+              limit_by: header
+              header_name: X_USER_ID
+              # Si le compteur est indisponible, on refuse plutôt que de laisser passer
+              fault_tolerant: false
 
 consumers:
   - username: keycloak-annonces

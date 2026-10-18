@@ -356,7 +356,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
       _Test : token absent / altéré / expiré / autre émetteur → 401 ; valide → passe._ [GW-01, GW-02, GW-03, GW-04]
 - [x] **13. Plugin Lua `identity-headers`** — `handler.lua` + `schema.lua`, priorité ~1000, montage par volume.
       _Test : `/api/me` d'alice ; headers forgés ignorés ; logs backend sans `Authorization`._ [GW-05, GW-06, GW-07, GW-08, GW-11]
-- [ ] **14. CORS + rate limiting** — plugins `cors` et `rate-limiting`.
+- [x] **14. CORS + rate limiting** — plugins `cors` et `rate-limiting`.
       _Test : preflight evil.local ; 4ᵉ appel → 429 + `Retry-After` ; bob non bloqué ; OPTIONS non décomptés._
       [GW-09, RL-01→RL-05]
 - [ ] **15. Script de test gateway + collection** — `scripts/test-gateway.sh` (et/ou collection Bruno) couvrant GW, RL, MT.
@@ -423,3 +423,8 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - `identity-headers` (priorité 1000) lit le token déposé par `jwt` dans `kong.ctx.shared.authenticated_jwt_token`, le décode
   avec `kong.plugins.jwt.jwt_parser`, pose X_USER_ID / X_ROLE_ID, retire Authorization. **Bonus azp** actif
   (`client_attendu: annonces-front`). Monté dans `/usr/local/share/lua/5.1/kong/plugins/identity-headers`.
+- **CORS Kong** : une origine unique en texte simple est renvoyée à TOUT le monde (GW-09 échoue) → origine écrite en
+  regex ancrée `^http://localhost:4200$`. Le 401 et le 429 générés par Kong portent bien les en-têtes CORS.
+- **Rate limiting** : fenêtre fixe par minute d'horloge (`Retry-After` = secondes jusqu'à la minute suivante) ;
+  le budget de 3 appels/min est partagé par TOUS les endpoints /api/** d'un utilisateur → le front doit être économe
+  (ne pas appeler /api/me au démarrage : les rôles des menus viennent du token).
