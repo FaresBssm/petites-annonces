@@ -1,5 +1,6 @@
 # Configuration déclarative de Kong OSS en mode DB-less (KONG_DATABASE=off).
 # Tout l'état de la gateway tient dans ce fichier versionné (GW-11) : pas de base, pas d'Admin API exposée.
+# Uniquement des plugins de l'édition open source (le plugin openid-connect, Enterprise, est interdit).
 _format_version: "3.0"
 _transform: true
 
@@ -14,3 +15,37 @@ services:
         strip_path: false
         # Le backend reçoit Host: backend:8081 ; l'URL publique lui parvient via X-Forwarded-*
         preserve_host: false
+        plugins:
+          # Validation du token (GW-01 à GW-04) : le plugin jwt de Kong OSS ne lit pas le JWKS,
+          # la clé publique du realm est figée dans le credential du consumer ci-dessous.
+          - name: jwt
+            config:
+              # Le claim iss désigne le credential à utiliser : un autre émetteur -> aucun credential -> 401
+              key_claim_name: iss
+              claims_to_verify:
+                - exp
+              # Token accepté uniquement dans l'en-tête Authorization (ni ?jwt= dans l'URL, ni cookie)
+              header_names:
+                - authorization
+              uri_param_names: []
+              cookie_names: []
+              # Les preflight OPTIONS ne portent jamais de token (traités par le plugin cors)
+              run_on_preflight: false
+
+consumers:
+  - username: keycloak-annonces
+    jwt_secrets:
+      # key = valeur EXACTE du claim iss des tokens du realm (KC_HOSTNAME=http://localhost:8180)
+      - key: http://localhost:8180/realms/annonces
+        algorithm: RS256
+        # Clé publique de la paire RSA fixe du realm (keycloak/realm-public-key.pem)
+        rsa_public_key: |
+          -----BEGIN PUBLIC KEY-----
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAl9D6OJT2gsAAIlRV1ia4
+          SH4jzsG9SrJhwjsqriheqvWKD0tXfZHOx+bMzsifry7IVtPFphgM8fBP40JQVbOP
+          XJcxjj9k1hdd14HFySBtI2RH4SLovD5tH8QdEfKCgQYm1JMrL2tsOSjCtBzLvpST
+          /k7PCXaVEwVd4/JkLU4KUS3vt9ouNPZJ0Kr0pWyS9HPyMV2FUP3Hr99T2nRZI/86
+          On5YmCwQavdL0SsTKw+8WC0zQZBmGSDvGtSkU4hgwXWzvoHb7/G0PCVIlLEIYip5
+          zr+A1ltD7pw15cBvYa7XXsT8pCfsgvbktW9yfK2GwI3WKSu0snX4Yf9HmaSgpGtO
+          fwIDAQAB
+          -----END PUBLIC KEY-----

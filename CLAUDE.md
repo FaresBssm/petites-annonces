@@ -352,7 +352,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - [x] **11. Kong DB-less de base** — `kong/kong.yml` (service `annonces-backend`, route `/api`), image officielle,
       healthcheck `kong health`, Admin API non publiée.
       _Test : `curl localhost:8080/api/me` → 401 renvoyé par le backend ; `localhost:8001` injoignable._ [GW-10, GW-11✱]
-- [ ] **12. Plugin `jwt`** — consumer `keycloak-annonces`, credential RS256 avec la clé publique PEM.
+- [x] **12. Plugin `jwt`** — consumer `keycloak-annonces`, credential RS256 avec la clé publique PEM.
       _Test : token absent / altéré / expiré / autre émetteur → 401 ; valide → passe._ [GW-01, GW-02, GW-03, GW-04]
 - [ ] **13. Plugin Lua `identity-headers`** — `handler.lua` + `schema.lua`, priorité ~1000, montage par volume.
       _Test : `/api/me` d'alice ; headers forgés ignorés ; logs backend sans `Authorization`._ [GW-05, GW-06, GW-07, GW-08, GW-11]
@@ -415,3 +415,8 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - Liste publique : DTO `PageResponse` {contenu, page, size, totalElements, totalPages}, tri `dateCreation` DESC, size ≤ 50.
 - Tester le backend « de l'intérieur » (comme Kong) :
   `docker run --rm --network petites-annonces_internal curlimages/curl:8.11.1 -s -H "X_USER_ID: u1" -H "X_ROLE_ID: USER" http://backend:8081/api/me`
+- Kong `jwt` : token lu **uniquement** dans `Authorization` (`uri_param_names: []`, `cookie_names: []`), `run_on_preflight: false`.
+  Messages de refus : absent → `Unauthorized` ; altéré ou autre clé → `Invalid signature` ; expiré → `{"exp":"token expired"}` ;
+  autre émetteur → `No credentials found for given 'iss'`.
+- `scripts/forge-jwt.ps1` fabrique des tokens de test (expiré, autre iss, autre clé). PowerShell 5.1 : `Get-Date -UFormat %s`
+  renvoie l'heure **locale** → toujours utiliser `[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()` pour `iat`/`exp`.
