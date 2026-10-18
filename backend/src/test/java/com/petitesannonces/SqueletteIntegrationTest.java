@@ -30,9 +30,10 @@ class SqueletteIntegrationTest {
     void flywayAppliqueLesMigrationsEtLesCategoriesInitiales() {
         List<String> versions = jdbc.queryForList(
                 "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank", String.class);
-        assertThat(versions).containsExactly("1", "2");
+        assertThat(versions).containsExactly("1", "2", "3");
 
-        List<String> libelles = jdbc.queryForList("SELECT libelle FROM categorie ORDER BY id", String.class);
+        // Les autres classes de test ajoutent des catégories dans la même base : on vérifie les 4 premières
+        List<String> libelles = jdbc.queryForList("SELECT libelle FROM categorie ORDER BY id LIMIT 4", String.class);
         assertThat(libelles).containsExactly("Immobilier", "Véhicules", "Emploi", "Multimédia");
     }
 

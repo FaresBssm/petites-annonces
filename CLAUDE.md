@@ -162,6 +162,12 @@ Cycle de vie : `EN_ATTENTE` → `PUBLIEE` ou `REJETEE`. Toute modification par l
   - Keycloak 26 (user profile déclaratif) : sans `email`/`firstName`/`lastName`, le login affiche « Update account information »
     → les utilisateurs du realm ont ces champs renseignés.
   - PowerShell 5.1 : `Invoke-WebRequest` gère mal les 302 et les corps d'erreur → utiliser `curl.exe` pour les tests HTTP.
+    Corps JSON passé à un exe natif : échapper les guillemets internes, ex. `-d '{\"libelle\":\"Animaux\"}'`.
+  - Flyway : ne jamais modifier une migration appliquée (checksum) → toute évolution = nouvelle migration (`V3__...`).
+  - Tests d'intégration : un seul conteneur PostgreSQL partagé par toutes les classes (contexte Spring en cache) →
+    données de test à libellés uniques, assertions en « contient » plutôt qu'en « exactement ».
+  - `@Valid` est évalué **avant** `@PreAuthorize` sur un contrôleur : un corps invalide envoyé par un rôle insuffisant
+    donne 400 (pas 403). Sans impact sur les critères (MT-08 envoie un corps valide).
 
 ### Livrables
 - Arborescence : `frontend/`, `backend/`, `kong/kong.yml`, `kong/plugins/identity-headers/` (`handler.lua`, `schema.lua`),
@@ -331,7 +337,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - [x] **7. Sécurité par headers** — `OncePerRequestFilter`, config stateless, `@EnableMethodSecurity`, 401/403 en
       `ProblemDetail`, `GET /api/me`, log debug des headers reçus. Tests Testcontainers.
       _Test : tests d'intégration verts._ [BK-02, BK-03, BK-05, GW-08✱]
-- [ ] **8. Catégories** — entité, repo, service, contrôleur, `@PreAuthorize`, validation, 409 si utilisée.
+- [x] **8. Catégories** — entité, repo, service, contrôleur, `@PreAuthorize`, validation, 409 si utilisée.
       _Test : tests d'intégration._ [MT-08, MT-09]
 - [ ] **9. Annonces (côté auteur)** — CRUD, `mes-annonces`, pagination + filtre, `@annonceSecurity.estAuteur`,
       règles 404, 201 + Location, statut remis en attente.
