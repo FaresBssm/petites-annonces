@@ -1,0 +1,37 @@
+name: petites-annonces
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Lus par postgres/init.sql (\getenv) pour créer les deux bases
+      KEYCLOAK_DB_USER: ${KEYCLOAK_DB_USER}
+      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      ANNONCES_DB_USER: ${ANNONCES_DB_USER}
+      ANNONCES_DB_PASSWORD: ${ANNONCES_DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    # Aucun port publié : la base n'est joignable que depuis le réseau internal (DEP-02)
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+networks:
+  # Côté navigateur : frontend, gateway, keycloak
+  public:
+  # Côté serveur : gateway, backend, postgres, keycloak. internal: true coupe l'accès
+  # vers l'extérieur, et un port publié d'un service uniquement sur ce réseau est inopérant.
+  internal:
+    internal: true
+
+volumes:
+  pgdata:

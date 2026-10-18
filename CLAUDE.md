@@ -139,6 +139,11 @@ Cycle de vie : `EN_ATTENTE` → `PUBLIEE` ou `REJETEE`. Toute modification par l
   - `rate-limiting` avec `limit_by: header` : si le header manque, Kong se rabat sur l'IP → `identity-headers` doit tourner avant (priorité).
   - Le 429 et le 401 générés par Kong doivent eux aussi porter les headers CORS, sinon le front ne lit pas `Retry-After`.
   - Le port 8080 est utilisé par l'appli `demofares` lancée dans IntelliJ → l'arrêter avant `docker compose up`.
+  - Un PostgreSQL tourne dans la distribution WSL **Ubuntu** et écoute sur `127.0.0.1:5432` (relayé par `wslrelay.exe`) :
+    un test du port 5432 depuis Windows répond donc, même stack arrêtée. Pour DEP-02, prouver avec
+    `docker compose ps` (colonne ports = `5432/tcp`, sans `0.0.0.0:`) ou arrêter ce PostgreSQL WSL avant la démo
+    (`wsl -d Ubuntu -- sudo service postgresql stop`).
+  - `postgres/init.sql` ne s'exécute qu'au premier démarrage (volume vide) : après modification → `docker compose down -v`.
 
 ### Livrables
 - Arborescence : `frontend/`, `backend/`, `kong/kong.yml`, `kong/plugins/identity-headers/` (`handler.lua`, `schema.lua`),
@@ -285,7 +290,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 
 ### Phase A — Socle
 - [x] **1. Initialisation** — dossier, `git init`, structure, `.gitignore`, `.env.example`, README, CLAUDE.md. [DEP-05✱]
-- [ ] **2. PostgreSQL** — `docker-compose.yml` (réseaux `public`/`internal`, volume nommé), service `postgres:16`,
+- [x] **2. PostgreSQL** — `docker-compose.yml` (réseaux `public`/`internal`, volume nommé), service `postgres:16`,
       `postgres/init.sql` (bases + utilisateurs `keycloak` et `annonces`), healthcheck `pg_isready`.
       _Test : `docker compose up -d postgres` → healthy ; `psql \l` ; port 5432 fermé depuis l'hôte._ [DEP-02✱, DEP-05✱]
 
