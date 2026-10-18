@@ -15,5 +15,8 @@ public interface AnnonceRepository extends JpaRepository<Annonce, UUID> {
 
     List<Annonce> findByAuteurIdOrderByDateCreationDesc(String auteurId);
 
+    /** File de modération : dateModification = moment d'entrée en attente (création ou dernière modification). */
+    List<Annonce> findByStatutOrderByDateModificationAsc(Statut statut);
+
     boolean existsByIdAndAuteurId(UUID id, String auteurId);
 }

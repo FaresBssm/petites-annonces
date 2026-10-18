@@ -63,6 +63,24 @@ public class AnnonceService {
         annonces.delete(trouver(id));
     }
 
+    public List<Annonce> listerEnAttente() {
+        return annonces.findByStatutOrderByDateModificationAsc(Statut.EN_ATTENTE);
+    }
+
+    @Transactional
+    public Annonce publier(UUID id) {
+        Annonce annonce = trouver(id);
+        annonce.publier();
+        return annonce;
+    }
+
+    @Transactional
+    public Annonce rejeter(UUID id, String motif) {
+        Annonce annonce = trouver(id);
+        annonce.rejeter(motif);
+        return annonce;
+    }
+
     private void verifierCategorie(Long categorieId) {
         if (!categories.existsById(categorieId)) {
             throw new ChampInvalideException("categorieId", "ne correspond à aucune catégorie");

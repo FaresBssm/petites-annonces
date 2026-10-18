@@ -43,6 +43,17 @@ public final class AnnonceDtos {
         }
     }
 
+    /** Corps de PATCH /api/moderation/annonces/{id}/rejeter : motif obligatoire (MT-07). */
+    public record RejetRequest(
+            @NotBlank(message = "est obligatoire")
+            @Size(max = 500, message = "ne doit pas dépasser 500 caractères")
+            String motif) {
+
+        public RejetRequest {
+            motif = motif == null ? null : motif.strip();
+        }
+    }
+
     public record AnnonceResponse(
             UUID id,
             String titre,

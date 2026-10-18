@@ -345,7 +345,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - [x] **9. Annonces (côté auteur)** — CRUD, `mes-annonces`, pagination + filtre, `@annonceSecurity.estAuteur`,
       règles 404, 201 + Location, statut remis en attente.
       _Test : tests d'intégration._ [MT-01, MT-02, MT-03, MT-04, MT-10, BK-04✱]
-- [ ] **10. Modération** — liste en attente, publier, rejeter avec motif obligatoire, gestionnaire d'erreurs complet (400/404/409).
+- [x] **10. Modération** — liste en attente, publier, rejeter avec motif obligatoire, gestionnaire d'erreurs complet (400/404/409).
       _Test : tests d'intégration._ [MT-05, MT-06, MT-07, BK-04]
 
 ### Phase D — Gateway Kong
@@ -405,6 +405,13 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
   → laissée passer pour que le service réponde 404).
 - `server.forward-headers-strategy: framework` : la `Location` du 201 utilise X-Forwarded-Host/Port/Proto posés par Kong
   (→ `http://localhost:8080/api/annonces/{id}`). Kong devra donc transmettre ces headers (comportement par défaut).
+- Modération : `@PreAuthorize("hasRole('MODERATEUR')")` sur la **classe** `ModerationController` ; transitions contrôlées
+  par l'entité (seule une annonce EN_ATTENTE est publiée/rejetée, sinon 409) ; motif de rejet stocké (`motifRejet`),
+  effacé quand l'auteur modifie. **Choix d'interprétation** : file « plus anciennes d'abord » triée sur
+  `dateModification` (= entrée en attente) et non `dateCreation` — identique pour une annonce jamais modifiée.
+- BK-04 audité : chaque endpoint porte `@PreAuthorize` (y compris `/api/me` : `isAuthenticated()`), aucun test de rôle
+  dans les services ; les seules références aux rôles hors annotations construisent ou affichent les autorités.
+- Backend complet : **56 tests d'intégration** (BK-02/03/05, MT-01 → MT-10).
 - Liste publique : DTO `PageResponse` {contenu, page, size, totalElements, totalPages}, tri `dateCreation` DESC, size ≤ 50.
 - Tester le backend « de l'intérieur » (comme Kong) :
   `docker run --rm --network petites-annonces_internal curlimages/curl:8.11.1 -s -H "X_USER_ID: u1" -H "X_ROLE_ID: USER" http://backend:8081/api/me`

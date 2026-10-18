@@ -1,5 +1,6 @@
 package com.petitesannonces.annonce;
 
+import com.petitesannonces.erreur.ConflitException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -73,6 +74,28 @@ public class Annonce {
         this.statut = Statut.EN_ATTENTE;
         this.motifRejet = null;
         this.dateModification = Instant.now();
+    }
+
+    /** Décision du modérateur : seule une annonce en attente peut être publiée. */
+    public void publier() {
+        verifierEnAttente("publiée");
+        this.statut = Statut.PUBLIEE;
+        this.motifRejet = null;
+        this.dateModification = Instant.now();
+    }
+
+    /** Décision du modérateur : seule une annonce en attente peut être rejetée, avec un motif. */
+    public void rejeter(String motif) {
+        verifierEnAttente("rejetée");
+        this.statut = Statut.REJETEE;
+        this.motifRejet = motif;
+        this.dateModification = Instant.now();
+    }
+
+    private void verifierEnAttente(String action) {
+        if (statut != Statut.EN_ATTENTE) {
+            throw new ConflitException("L'annonce est " + statut + " : seule une annonce EN_ATTENTE peut être " + action + ".");
+        }
     }
 
     public UUID getId() {

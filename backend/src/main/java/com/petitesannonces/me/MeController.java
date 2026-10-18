@@ -1,5 +1,6 @@
 package com.petitesannonces.me;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,7 @@ public class MeController {
      * est celle du SecurityContextHolder, posée par HeaderAuthenticationFilter.
      */
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public MeResponse me(Authentication authentication) {
         List<String> roles = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)

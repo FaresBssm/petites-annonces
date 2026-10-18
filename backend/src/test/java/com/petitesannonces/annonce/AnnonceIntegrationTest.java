@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -311,9 +312,10 @@ class AnnonceIntegrationTest {
         return objectMapper.readTree(resultat.getResponse().getContentAsString()).get("id").asText();
     }
 
-    /** La publication par un modérateur arrive à l'étape 10 : ici on la simule en base. */
-    private void publier(String id) {
-        jdbc.update("UPDATE annonce SET statut = 'PUBLIEE' WHERE id = ?", UUID.fromString(id));
+    /** Publication par le modérateur, via l'API de modération. */
+    private void publier(String id) throws Exception {
+        mockMvc.perform(patch("/api/moderation/annonces/{id}/publier", id).with(modo()))
+                .andExpect(status().isOk());
     }
 
     private String corpsValide(String titre) {
