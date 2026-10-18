@@ -162,7 +162,10 @@ Cycle de vie : `EN_ATTENTE` → `PUBLIEE` ou `REJETEE`. Toute modification par l
   - Keycloak 26 (user profile déclaratif) : sans `email`/`firstName`/`lastName`, le login affiche « Update account information »
     → les utilisateurs du realm ont ces champs renseignés.
   - PowerShell 5.1 : `Invoke-WebRequest` gère mal les 302 et les corps d'erreur → utiliser `curl.exe` pour les tests HTTP.
-    Corps JSON passé à un exe natif : échapper les guillemets internes, ex. `-d '{\"libelle\":\"Animaux\"}'`.
+    Corps JSON passé à un exe natif : échapper les guillemets internes (`-d '{\"libelle\":\"Animaux\"}'`) ne marche que
+    **sans espace** ; dès qu'une valeur contient un espace, PS 5.1 découpe l'argument (curl : exit 3). Méthode fiable :
+    passer le JSON par l'entrée standard → `'{"titre":"Velo de course"}' | curl.exe -s -d '@-' ...`
+    (ou `| docker run -i --rm ... curlimages/curl:8.11.1 -d '@-' ...`).
   - Flyway : ne jamais modifier une migration appliquée (checksum) → toute évolution = nouvelle migration (`V3__...`).
   - Tests d'intégration : un seul conteneur PostgreSQL partagé par toutes les classes (contexte Spring en cache) →
     données de test à libellés uniques, assertions en « contient » plutôt qu'en « exactement ».
@@ -339,7 +342,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
       _Test : tests d'intégration verts._ [BK-02, BK-03, BK-05, GW-08✱]
 - [x] **8. Catégories** — entité, repo, service, contrôleur, `@PreAuthorize`, validation, 409 si utilisée.
       _Test : tests d'intégration._ [MT-08, MT-09]
-- [ ] **9. Annonces (côté auteur)** — CRUD, `mes-annonces`, pagination + filtre, `@annonceSecurity.estAuteur`,
+- [x] **9. Annonces (côté auteur)** — CRUD, `mes-annonces`, pagination + filtre, `@annonceSecurity.estAuteur`,
       règles 404, 201 + Location, statut remis en attente.
       _Test : tests d'intégration._ [MT-01, MT-02, MT-03, MT-04, MT-10, BK-04✱]
 - [ ] **10. Modération** — liste en attente, publier, rejeter avec motif obligatoire, gestionnaire d'erreurs complet (400/404/409).
@@ -397,5 +400,11 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
   posée par `HeaderAuthenticationFilter` (avant `AnonymousAuthenticationFilter`) ; X_ROLE_ID filtré sur USER/MODERATEUR/ADMIN.
 - 401/403 Spring Security → `SecurityProblemHandler` (ProblemDetail) ; erreurs MVC → `spring.mvc.problemdetails.enabled`.
   Le dispatch ERROR est en `permitAll`, sinon une erreur 400/500 se transformerait en 401.
+- GET /api/annonces/{id} : `@PostAuthorize` (publiée OU auteur OU MODERATEUR) + `@HandleAuthorizationDenied(AnnonceInvisibleHandler)`
+  → refus converti en **404** (MT-02) ; PUT/DELETE : `@annonceSecurity.estAuteur(#id, authentication)` (annonce inexistante
+  → laissée passer pour que le service réponde 404).
+- `server.forward-headers-strategy: framework` : la `Location` du 201 utilise X-Forwarded-Host/Port/Proto posés par Kong
+  (→ `http://localhost:8080/api/annonces/{id}`). Kong devra donc transmettre ces headers (comportement par défaut).
+- Liste publique : DTO `PageResponse` {contenu, page, size, totalElements, totalPages}, tri `dateCreation` DESC, size ≤ 50.
 - Tester le backend « de l'intérieur » (comme Kong) :
   `docker run --rm --network petites-annonces_internal curlimages/curl:8.11.1 -s -H "X_USER_ID: u1" -H "X_ROLE_ID: USER" http://backend:8081/api/me`

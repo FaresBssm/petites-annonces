@@ -40,6 +40,14 @@ public class GestionnaireErreurs extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, problem, headers, status, request);
     }
 
+    @ExceptionHandler(ChampInvalideException.class)
+    public ProblemDetail champInvalide(ChampInvalideException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Requête invalide : 1 champ(s) en erreur.");
+        problem.setProperty("errors", Map.of(ex.getChamp(), ex.getMessage()));
+        return problem;
+    }
+
     @ExceptionHandler(RessourceIntrouvableException.class)
     public ProblemDetail introuvable(RessourceIntrouvableException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());

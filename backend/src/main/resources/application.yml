@@ -1,5 +1,8 @@
 server:
   port: 8081
+  # Location (201) construite avec l'URL publique (X-Forwarded-* posés par Kong) et non backend:8081.
+  # Sûr ici : seul Kong peut joindre le backend.
+  forward-headers-strategy: framework
 
 spring:
   application:
