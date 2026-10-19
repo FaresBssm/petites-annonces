@@ -53,6 +53,11 @@ export class NotificationService {
     }, 1000);
   }
 
+  /** Changement de page : on efface le message, mais pas le compte à rebours du 429 (toujours valable). */
+  effacerMessage(): void {
+    this.courante.set(null);
+  }
+
   fermer(): void {
     this.courante.set(null);
     this.finLimite.set(null);

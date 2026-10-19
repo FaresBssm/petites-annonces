@@ -376,7 +376,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
       _Test : alice / modo / admin._ [FR-03, MT-06, MT-08 via UI]
 
 ### Phase F — Finalisation
-- [ ] **21. Recette complète** — `docker compose down -v` puis `up -d --build` chronométré, persistance, recherche de secrets,
+- [x] **21. Recette complète** — `docker compose down -v` puis `up -d --build` chronométré, persistance, recherche de secrets,
       passage des 48 critères.
       _Test : checklist des critères._ [DEP-01, DEP-04, DEP-05, tous]
 - [ ] **22. README final** — schéma d'architecture, comptes de test, choix justifiés, procédure d'extraction de la clé publique.
@@ -438,3 +438,8 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
   par `history.replaceState` **avant** la navigation initiale du routeur (une navigation programmée serait écrasée).
 - 429 : `erreursInterceptor` rejoue automatiquement une fois les **GET** après Retry-After (écran rempli tout seul) ;
   les écritures ne sont jamais rejouées. Démo FR-06 : modo ouvre `/annonces/<id d'alice>/modifier` et enregistre → 403.
+- **Recette (étape 21)** : `down -v` puis `up -d --build --wait` = **132 s** avec cache Docker (DEP-01) ; `down`/`up` = 65 s
+  avec données et realm conservés (DEP-04) ; DEP-02/03/05 vérifiés ; backend 56/56. Premier build SANS cache > 3 min
+  (téléchargements Maven/npm) → préconstruire avec `docker compose build` avant la démo.
+- `test-gateway.ps1` : 27/27 lors de son dernier passage complet ; non rejoué après la recette (processus arrêté par
+  manque de mémoire de la machine pendant que Maven/Testcontainers tournaient en parallèle) → ne pas lancer les deux en même temps.
