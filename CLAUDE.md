@@ -399,8 +399,8 @@ Contrainte : le fonctionnement **local** de l'énoncé (localhost:4200 / 8080 / 
       Caddy en reverse proxy HTTPS (seuls 80/443 ouverts), `deploy/.env.prod.example`. _Test : `docker compose config`, essai local._
 - [ ] **27. Préparation de la VM** — vérification OS, installation Docker + plugin compose, pare-feu (22, 80, 443),
       dossier de déploiement, clé SSH dédiée au déploiement. _Test : `docker run hello-world` sur la VM._
-- [ ] **28. Dépôt GitHub** — l'utilisateur crée le dépôt privé vide ; ajout du remote ; premier push par l'utilisateur.
-- [ ] **29. Pipeline CI** — GitHub Actions : tests backend (Testcontainers), build frontend, build + push des images
+- [x] **28. Dépôt GitHub** — l'utilisateur crée le dépôt privé vide ; ajout du remote ; premier push par l'utilisateur.
+- [x] **29. Pipeline CI** — GitHub Actions : tests backend (Testcontainers), build frontend, build + push des images
       sur Docker Hub (tags `sha` et `latest`) sur `main`. Secrets : `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.
 - [ ] **30. Pipeline CD** — déploiement SSH : copie des fichiers de `deploy/`, `.env` de production généré depuis les
       secrets GitHub, `docker compose pull && up -d --wait`, test de fumée HTTPS.
@@ -497,3 +497,9 @@ Contrainte : le fonctionnement **local** de l'énoncé (localhost:4200 / 8080 / 
   Conteneurs `pa-*` sur le réseau externe `proxy` ; Keycloak en `start` (prod) derrière TLS ; Kong `KONG_TRUSTED_IPS`
   pour garder X-Forwarded-Proto/Host/Port du proxy. Secrets prod : `scripts/generer-env-prod.ps1` → `deploy/.env.prod`
   (ignoré par Git, nouvelle paire RSA) → secret GitHub `PROD_ENV_FILE`.
+- **Dépôt** : https://github.com/FaresBssm/petites-annonces (privé). 7 secrets créés par l'utilisateur : DOCKERHUB_USERNAME,
+  DOCKERHUB_TOKEN, VM_HOST, VM_USER, VM_SSH_KEY (clé dédiée `~/.ssh/petites_annonces_deploy`), VM_SSH_KNOWN_HOSTS, PROD_ENV_FILE.
+- Un commit `4bfe604` d'une AUTRE session Claude (pipeline GHCR + tunnel SSH, docker-compose.prod.yml à la racine) a été
+  remplacé à la demande de l'utilisateur par la pipeline Docker Hub + HTTPS public. Une seule session à la fois sur ce dépôt.
+- Pipeline `.github/workflows/ci-cd.yml` : tests → images Docker Hub (`latest` + SHA) → déploiement SSH **seulement si la
+  variable de dépôt `DEPLOY_ENABLED=true`** (à créer après l'étape 27, avec l'accord de l'utilisateur).

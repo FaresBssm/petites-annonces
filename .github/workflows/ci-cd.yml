@@ -1,176 +1,172 @@
-# Intégration et déploiement continus
-# - pull request : tests backend (Testcontainers) + build des deux images ;
-# - push sur main : idem, puis images publiées sur GHCR et déploiement sur le serveur par SSH.
-# Credentials attendus : voir README.md, section « Déploiement continu ».
+# Intégration et déploiement continus PetitesAnnonces
+#   - push / pull request : tests d'intégration du backend (Testcontainers PostgreSQL 16)
+#   - push sur main, tests verts : images construites et publiées sur Docker Hub (tags "latest" et SHA du commit)
+#   - push sur main, images publiées, ET variable de dépôt DEPLOY_ENABLED=true : déploiement SSH sur la VM
+#     (HTTPS public via le reverse proxy Nginx partagé, cf. deploy/)
+#
+# Secrets du dépôt : DOCKERHUB_USERNAME, DOCKERHUB_TOKEN, VM_HOST, VM_USER, VM_SSH_KEY, VM_SSH_KNOWN_HOSTS, PROD_ENV_FILE
+# Variable du dépôt : DEPLOY_ENABLED (true pour activer le déploiement)
 name: CI/CD
 
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
   workflow_dispatch:
 
-# Un seul déploiement à la fois ; un nouveau push annule la CI en cours sur la même branche
+# Un nouveau push annule la CI encore en cours sur la même branche (le déploiement, lui, n'est jamais interrompu)
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 env:
-  # GHCR exige un nom en minuscules
-  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+  DEPLOY_PATH: /opt/petites-annonces
 
 jobs:
 
-  backend-tests:
-    name: Tests backend (mvnw verify)
+  tests:
+    name: Tests backend (Java 21, Testcontainers)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-java@v5
+      - uses: actions/checkout@v4
+
+      - name: JDK 21
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
-      # Tests d'intégration @SpringBootTest + Testcontainers (Docker est disponible sur le runner)
-      - run: ./mvnw -B -ntp verify
+
+      - name: mvnw verify (tests d'intégration)
+        run: ./mvnw -B -ntp verify
+
+      - name: Rapports de tests (en cas d'échec)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapports-surefire
+          path: backend/target/surefire-reports/
+          retention-days: 7
 
   images:
-    name: Image ${{ matrix.service }}
+    name: Image ${{ matrix.composant }} -> Docker Hub
+    needs: tests
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs: backend-tests
-    permissions:
-      contents: read
-      packages: write
+    timeout-minutes: 30
     strategy:
       matrix:
-        service: [backend, frontend]
+        composant: [backend, frontend]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - name: Nom d'image en minuscules
-        run: echo "IMAGE=${IMAGE_REGISTRY,,}/petites-annonces-${{ matrix.service }}" >> "$GITHUB_ENV"
+      - name: Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Connexion à Docker Hub
+        uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - id: meta
+      - name: Tags et labels
+        id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE }}
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/petites-annonces-${{ matrix.composant }}
           tags: |
-            type=sha,format=long
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest
+            type=sha,format=long,prefix=
 
-      # Build sur toutes les branches (le front est compilé ici) ; publication sur main seulement
-      - uses: docker/build-push-action@v6
+      - name: Build et push
+        uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.service }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          context: ${{ matrix.composant }}
+          platforms: linux/amd64
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          # Cache des couches entre deux exécutions (dépendances Maven / npm)
+          cache-from: type=gha,scope=${{ matrix.composant }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.composant }}
 
   deploy:
-    name: Déploiement (SSH)
-    runs-on: ubuntu-latest
+    name: Déploiement sur la VM (SSH)
     needs: images
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment: production
+    # Désactivé tant que la variable de dépôt DEPLOY_ENABLED ne vaut pas "true"
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     concurrency:
       group: deploy-production
       cancel-in-progress: false
-    permissions:
-      contents: read
-      packages: read
-    env:
-      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-      DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
-      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/petites-annonces' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - name: Clé SSH et empreinte du serveur
+      - name: Clé SSH dédiée et empreinte vérifiée de la VM
         env:
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_SSH_KNOWN_HOSTS: ${{ secrets.VM_SSH_KNOWN_HOSTS }}
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_deploy
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/id_deploy
+          printf '%s\n' "$VM_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/id_deploy ~/.ssh/known_hosts
           cat > ~/.ssh/config <<EOF
-          Host deploy
-            HostName $DEPLOY_HOST
-            User $DEPLOY_USER
-            Port $DEPLOY_PORT
+          Host vm
+            HostName $VM_HOST
+            User $VM_USER
             IdentityFile ~/.ssh/id_deploy
             StrictHostKeyChecking yes
           EOF
 
-      # Le .env du serveur est reconstruit à chaque déploiement depuis les secrets GitHub
-      - name: Génération du .env
+      # .env de production = secret PROD_ENV_FILE, avec l'image exacte de ce commit (et non "latest")
+      - name: Configuration de production
         env:
-          POSTGRES_USER: ${{ vars.POSTGRES_USER || 'postgres' }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          KEYCLOAK_DB_USER: ${{ vars.KEYCLOAK_DB_USER || 'keycloak' }}
-          KEYCLOAK_DB_PASSWORD: ${{ secrets.KEYCLOAK_DB_PASSWORD }}
-          ANNONCES_DB_USER: ${{ vars.ANNONCES_DB_USER || 'annonces' }}
-          ANNONCES_DB_PASSWORD: ${{ secrets.ANNONCES_DB_PASSWORD }}
-          KC_BOOTSTRAP_ADMIN_USERNAME: ${{ vars.KC_BOOTSTRAP_ADMIN_USERNAME || 'admin' }}
-          KC_BOOTSTRAP_ADMIN_PASSWORD: ${{ secrets.KC_BOOTSTRAP_ADMIN_PASSWORD }}
-          REALM_ALICE_PASSWORD: ${{ secrets.REALM_ALICE_PASSWORD }}
-          REALM_BOB_PASSWORD: ${{ secrets.REALM_BOB_PASSWORD }}
-          REALM_MODO_PASSWORD: ${{ secrets.REALM_MODO_PASSWORD }}
-          REALM_ADMIN_PASSWORD: ${{ secrets.REALM_ADMIN_PASSWORD }}
-          REALM_RSA_PRIVATE_KEY: ${{ secrets.REALM_RSA_PRIVATE_KEY }}
-          GATEWAY_SECRET: ${{ secrets.GATEWAY_SECRET }}
+          PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
         run: |
-          VARS="POSTGRES_USER POSTGRES_PASSWORD KEYCLOAK_DB_USER KEYCLOAK_DB_PASSWORD
-                ANNONCES_DB_USER ANNONCES_DB_PASSWORD KC_BOOTSTRAP_ADMIN_USERNAME KC_BOOTSTRAP_ADMIN_PASSWORD
-                REALM_ALICE_PASSWORD REALM_BOB_PASSWORD REALM_MODO_PASSWORD REALM_ADMIN_PASSWORD
-                REALM_RSA_PRIVATE_KEY GATEWAY_SECRET"
           umask 077
-          : > deploy.env
-          for v in $VARS DEPLOY_HOST DEPLOY_USER; do
-            [ -n "${!v}" ] || { echo "::error::Secret ou variable manquant : $v"; exit 1; }
+          printf '%s\n' "$PROD_ENV_FILE" | sed "s/^IMAGE_TAG=.*/IMAGE_TAG=${GITHUB_SHA}/" > env.prod
+          for v in PUBLIC_APP_URL PUBLIC_API_URL PUBLIC_AUTH_URL; do
+            grep -q "^$v=" env.prod || { echo "::error::$v absent de PROD_ENV_FILE"; exit 1; }
           done
-          for v in $VARS; do printf '%s=%s\n' "$v" "${!v}" >> deploy.env; done
-          printf 'IMAGE_REGISTRY=%s\nIMAGE_TAG=sha-%s\n' "${IMAGE_REGISTRY,,}" "$GITHUB_SHA" >> deploy.env
+          # URL publiques (non secrètes) pour le test de fumée
+          grep -E '^PUBLIC_(APP|API|AUTH)_URL=' env.prod >> "$GITHUB_ENV"
 
-      - name: Copie de la configuration sur le serveur
+      - name: Copie des fichiers de déploiement
         run: |
-          tar czf - docker-compose.yml docker-compose.prod.yml kong keycloak/realm-annonces.json postgres/init.sql \
-            | ssh deploy "mkdir -p '$DEPLOY_PATH' && tar xzf - -C '$DEPLOY_PATH'"
-          ssh deploy "umask 077 && cat > '$DEPLOY_PATH/.env'" < deploy.env
-          rm -f deploy.env
+          tar czf - deploy/docker-compose.prod.yml deploy/reverse-proxy postgres/init.sql \
+                    keycloak/realm-annonces.json kong/kong.yml kong/render-config.sh kong/plugins \
+            | ssh vm "mkdir -p '$DEPLOY_PATH' && tar xzf - -C '$DEPLOY_PATH'"
+          ssh vm "umask 077 && cat > '$DEPLOY_PATH/deploy/.env.prod'" < env.prod
+          rm -f env.prod
 
-      - name: Mise à jour de la stack
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Mise à jour de la stack (images publiques, aucune connexion au registre)
         run: |
-          # Jeton éphémère du job (valide jusqu'à sa fin) : aucun PAT stocké sur le serveur
-          printf '%s' "$GHCR_TOKEN" | ssh deploy "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
-          ssh deploy "cd '$DEPLOY_PATH' \
-            && docker compose -f docker-compose.yml -f docker-compose.prod.yml pull --quiet \
-            ; status=\$?; docker logout ghcr.io >/dev/null; [ \$status -eq 0 ] \
-            && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --wait --wait-timeout 300 --remove-orphans \
-            && docker compose -f docker-compose.yml -f docker-compose.prod.yml ps \
-            && docker image prune -f >/dev/null"
+          ssh vm "cd '$DEPLOY_PATH' \
+            && docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod pull --quiet \
+            && docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod up -d --wait --wait-timeout 300 --remove-orphans \
+            && docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod ps"
+
+      - name: Test de fumée HTTPS
+        run: |
+          set -e
+          curl -fsS -o /dev/null "$PUBLIC_APP_URL/" && echo "application : OK"
+          test "$(curl -fsS "$PUBLIC_AUTH_URL/realms/annonces/.well-known/openid-configuration" | jq -r .issuer)" \
+               = "$PUBLIC_AUTH_URL/realms/annonces" && echo "keycloak : issuer OK"
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$PUBLIC_API_URL/api/me")
+          test "$code" = "401" && echo "gateway : 401 sans token, OK"
 
       - name: Nettoyage
         if: always()
-        run: rm -rf ~/.ssh deploy.env
+        run: rm -rf ~/.ssh env.prod

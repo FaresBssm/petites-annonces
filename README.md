@@ -164,51 +164,63 @@ Le password grant est interdit sur `annonces-front` (KC-04) : `get-token.ps1` re
 Sur une machine de développement, d'autres programmes peuvent occuper ces ports (un PostgreSQL local sur 5432, une autre
 application sur 8081) : `docker compose ps` fait foi pour montrer que la stack ne les publie pas.
 
-## Déploiement continu
+## Déploiement (VM, HTTPS public, GitHub Actions, Docker Hub)
 
-Pipeline : [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml).
+| URL publique | Service |
+|---|---|
+| https://app.72-60-188-97.sslip.io | application Angular |
+| https://api.72-60-188-97.sslip.io | gateway Kong (`/api`) |
+| https://auth.72-60-188-97.sslip.io | Keycloak |
+
+`sslip.io` résout `<sous-domaine>.72-60-188-97.sslip.io` vers `72.60.188.97` sans configuration DNS, ce qui permet
+d'obtenir des certificats Let's Encrypt. **HTTPS est indispensable** : le navigateur ne fournit `crypto.subtle` (calcul du
+`code_challenge` PKCE S256) qu'en contexte sécurisé, et Keycloak refuse le HTTP hors réseau privé.
+
+**Architecture sur la VM** (serveur partagé avec d'autres projets) : le TLS est terminé par le reverse proxy Nginx commun
+du serveur (ports 80/443, certificats `certbot`) ; nos conteneurs `pa-*` rejoignent son réseau Docker `proxy`.
+Aucun port n'est publié par la stack ; backend et PostgreSQL restent sur le réseau `internal`.
+
+| Fichier | Rôle |
+|---|---|
+| [`deploy/docker-compose.prod.yml`](deploy/docker-compose.prod.yml) | stack de production (images Docker Hub, Keycloak en mode `start`, Kong configuré par `kong/render-config.sh`) |
+| [`deploy/reverse-proxy/`](deploy/reverse-proxy/) | site Nginx (3 sous-domaines) et `ajouter-certificats.sh` : n'émet que nos certificats, recharge à chaud après `nginx -t` |
+| [`scripts/generer-env-prod.ps1`](scripts/generer-env-prod.ps1) | génère `deploy/.env.prod` (ignoré par Git) : secrets aléatoires et **nouvelle paire RSA** du realm |
+| [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) | pipeline CI/CD |
+
+### Pipeline
 
 | Événement | Étapes |
 |---|---|
-| Pull request | `mvnw verify` (Testcontainers) → build des images backend et frontend (sans publication) |
-| Push sur `main` | idem → images publiées sur `ghcr.io/<owner>/petites-annonces-{backend,frontend}` (`sha-<commit>` + `latest`) → déploiement SSH |
+| Pull request | tests d'intégration du backend (`mvnw verify`, Testcontainers) |
+| Push sur `main` | tests → images `faresbssm/petites-annonces-{backend,frontend}` sur Docker Hub (tags `latest` et SHA) → déploiement si `DEPLOY_ENABLED=true` |
 
-Le déploiement copie `docker-compose.yml`, [`docker-compose.prod.yml`](docker-compose.prod.yml), `kong/`, le realm et
-`init.sql` dans `DEPLOY_PATH`, régénère le `.env` depuis les secrets GitHub, puis lance `docker compose pull` et
-`docker compose up -d --wait`. Les images sont tirées avec le jeton éphémère du job : aucun jeton GHCR n'est stocké sur le serveur.
+Déploiement : copie de `deploy/`, `kong/`, du realm et de `init.sql` dans `/opt/petites-annonces`, `.env` de production
+reconstruit depuis le secret `PROD_ENV_FILE` (avec l'image du commit, et non `latest`), `docker compose pull` puis
+`up -d --wait`, et test de fumée HTTPS (application, `iss` de Keycloak, 401 de la gateway sans token).
 
-**Serveur** : Linux avec Docker Engine et Compose ≥ 2.24.4, un utilisateur membre du groupe `docker` et une clé SSH dédiée.
+### Secrets et variable GitHub Actions
 
-**Accès** : les URL de l'application restent `http://localhost:*` (`iss` des tokens, CORS, redirect URI). La surcharge de
-production ne publie donc les ports que sur `127.0.0.1` du serveur. On y accède par tunnel SSH :
-
-```bash
-ssh -L 4200:localhost:4200 -L 8080:localhost:8080 -L 8180:localhost:8180 <user>@<serveur>
-# puis http://localhost:4200 dans le navigateur local
-```
-
-Credentials à créer dans *Settings → Environments → `production`* :
+*Settings → Secrets and variables → Actions*
 
 | Type | Nom | Valeur |
 |---|---|---|
-| Secret | `DEPLOY_HOST` | IP ou nom DNS du serveur |
-| Secret | `DEPLOY_USER` | utilisateur SSH (membre du groupe `docker`) |
-| Secret | `DEPLOY_SSH_KEY` | clé **privée** SSH dédiée au déploiement (la publique dans `~/.ssh/authorized_keys` du serveur) |
-| Secret | `DEPLOY_KNOWN_HOSTS` | sortie de `ssh-keyscan -p <port> <serveur>` (empreinte vérifiée du serveur) |
-| Secret | `POSTGRES_PASSWORD` | mot de passe du superutilisateur PostgreSQL |
-| Secret | `KEYCLOAK_DB_PASSWORD` | mot de passe de la base `keycloak` |
-| Secret | `ANNONCES_DB_PASSWORD` | mot de passe de la base `annonces` |
-| Secret | `KC_BOOTSTRAP_ADMIN_PASSWORD` | mot de passe de la console Keycloak |
-| Secret | `REALM_ALICE_PASSWORD`, `REALM_BOB_PASSWORD`, `REALM_MODO_PASSWORD`, `REALM_ADMIN_PASSWORD` | mots de passe des comptes de test |
-| Secret | `REALM_RSA_PRIVATE_KEY` | clé privée du realm : **doit correspondre** à la clé publique de `kong/kong.yml` (voir « Clé de signature du realm ») |
-| Secret | `GATEWAY_SECRET` | secret partagé Kong → backend (`openssl rand -hex 24`) |
-| Variable *(optionnelle)* | `DEPLOY_PORT` | port SSH (défaut `22`) |
-| Variable *(optionnelle)* | `DEPLOY_PATH` | dossier de la stack sur le serveur (défaut `/opt/petites-annonces`) |
-| Variable *(optionnelle)* | `POSTGRES_USER`, `KEYCLOAK_DB_USER`, `ANNONCES_DB_USER`, `KC_BOOTSTRAP_ADMIN_USERNAME` | défauts : `postgres`, `keycloak`, `annonces`, `admin` |
+| Secret | `DOCKERHUB_USERNAME` | compte Docker Hub |
+| Secret | `DOCKERHUB_TOKEN` | token d'accès Docker Hub (Read & Write) |
+| Secret | `VM_HOST` | IP de la VM |
+| Secret | `VM_USER` | utilisateur SSH |
+| Secret | `VM_SSH_KEY` | clé **privée** dédiée au déploiement (la publique est dans `authorized_keys` de la VM) |
+| Secret | `VM_SSH_KNOWN_HOSTS` | `ssh-keyscan <ip>` : empreintes vérifiées de la VM |
+| Secret | `PROD_ENV_FILE` | contenu complet de `deploy/.env.prod` |
+| Variable | `DEPLOY_ENABLED` | `true` pour activer le job de déploiement |
 
-`GITHUB_TOKEN` est fourni automatiquement (publication et lecture des images GHCR). Les mots de passe des bases et des
-comptes du realm ne sont appliqués qu'au **premier** démarrage (volume vide, import du realm) : pour les changer ensuite,
-le faire aussi dans PostgreSQL et Keycloak, ou réinitialiser avec `docker compose down -v` sur le serveur.
+### Mise en place initiale (une fois, sur la VM)
+
+```bash
+bash /opt/petites-annonces/deploy/reverse-proxy/ajouter-certificats.sh 72.60.188.97
+```
+
+Les mots de passe des bases et des comptes du realm ne sont appliqués qu'au **premier** démarrage (volume vide, import du
+realm) : pour les changer ensuite, les modifier aussi dans PostgreSQL et Keycloak.
 
 ## Arborescence
 
