@@ -14,7 +14,8 @@ import { NotificationService } from '../commun/notification.service';
     <form class="carte barre" (ngSubmit)="creer()">
       <div class="champ" style="flex: 1; margin: 0">
         <label for="libelle">Nouvelle catégorie</label>
-        <input id="libelle" name="libelle" [(ngModel)]="libelle" maxlength="50" placeholder="ex. Animaux" />
+        <input id="libelle" name="libelle" [(ngModel)]="libelle" (ngModelChange)="erreur.set('')"
+               maxlength="50" placeholder="ex. Animaux" />
         @if (erreur()) { <span class="erreur-champ">{{ erreur() }}</span> }
       </div>
       <button class="bouton" type="submit">Créer</button>

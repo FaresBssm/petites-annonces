@@ -449,3 +449,6 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
   (cas des tests d'intégration, sauf `GatewaySecretIntegrationTest`). Backend : **63 tests**.
 - Rate limiting en démo : si tu utilises l'application dans ton navigateur en même temps que les scripts, vous partagez
   le quota de l'utilisateur (ex. alice) → 429 « inexpliqués » côté script.
+- Écran Catégories vérifié dans Chrome (admin) : création, doublon insensible à la casse (409 sous le champ),
+  catégorie utilisée (409, MT-09), suppression ; guard ADMIN (alice redirigée depuis /categories).
+- **Toutes les étapes hors bonus sont terminées** ; bonus faits : azp, correlation-id, secret partagé.
