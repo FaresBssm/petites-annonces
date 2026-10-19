@@ -146,7 +146,8 @@ if ($Sections -contains "GW") {
   $yml = Get-Content kong\kong.yml -Raw
   $noms = [regex]::Matches($yml, '(?m)^\s*-\s*name:\s*([\w-]+)\s*$') | ForEach-Object { $_.Groups[1].Value }
   $plugins = $noms | Where-Object { $_ -notin @('annonces-backend', 'api') }
-  $oss = @('cors', 'jwt', 'identity-headers', 'rate-limiting')
+  # Plugins livres avec Kong OSS (bundled) + notre plugin maison
+  $oss = @('correlation-id', 'cors', 'jwt', 'identity-headers', 'rate-limiting')
   $dbless = ((docker compose exec -T gateway printenv KONG_DATABASE) -join '').Trim()
   $fichiers = (Test-Path kong\plugins\identity-headers\handler.lua) -and (Test-Path kong\plugins\identity-headers\schema.lua)
   Verifier "GW-11" "DB-less, config dans kong/kong.yml, plugin dans kong/plugins/, plugins OSS uniquement" (($dbless -eq 'off') -and $fichiers -and (@($plugins | Where-Object { $_ -notin $oss }).Count -eq 0) -and ($yml -notmatch '(?m)^\s*-\s*name:\s*openid-connect')) "KONG_DATABASE=$dbless plugins=$($plugins -join ',')"
