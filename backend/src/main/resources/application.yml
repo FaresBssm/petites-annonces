@@ -25,6 +25,9 @@ spring:
       enabled: true
 
 logging:
+  pattern:
+    # Bonus : identifiant de corrélation de Kong (MDC rempli par CorrelationIdFilter) sur chaque ligne
+    correlation: "[cid=%X{correlationId:-}] "
   level:
     # Trace des headers reçus de la gateway (GW-01, GW-08)
     com.petitesannonces.security.HeaderAuthenticationFilter: DEBUG

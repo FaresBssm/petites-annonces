@@ -16,6 +16,14 @@ services:
         # Le backend reçoit Host: backend:8081 ; l'URL publique lui parvient via X-Forwarded-*
         preserve_host: false
         plugins:
+          # Bonus traçabilité (priorité la plus haute de Kong) : un identifiant par requête, transmis au backend
+          # (repris dans ses logs) et renvoyé au client, y compris sur les 401 / 429 générés par Kong.
+          - name: correlation-id
+            config:
+              header_name: X-Correlation-ID
+              generator: uuid#counter
+              echo_downstream: true
+
           # CORS (priorité 2000, avant tout le reste) : seule la SPA peut lire les réponses de l'API.
           # Les preflight OPTIONS sont traités et terminés ici : ni authentifiés, ni décomptés (RL-05).
           - name: cors
@@ -38,6 +46,7 @@ services:
               exposed_headers:
                 - Retry-After
                 - Location
+                - X-Correlation-ID
               credentials: false
               max_age: 600
               preflight_continue: false
