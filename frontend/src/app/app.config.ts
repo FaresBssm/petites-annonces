@@ -1,4 +1,4 @@
-import { ApplicationConfig, inject, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, LOCALE_ID, inject, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { OAuthStorage, provideOAuthClient } from 'angular-oauth2-oidc';
@@ -11,6 +11,7 @@ import { erreursInterceptor } from './commun/erreurs.interceptor';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
+    { provide: LOCALE_ID, useValue: 'fr' },
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([jetonInterceptor, erreursInterceptor])),
     // Notre propre interceptor ajoute le Bearer : celui de la librairie reste désactivé

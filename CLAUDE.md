@@ -370,7 +370,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
       _Test : DevTools (URL d'autorisation, `/token`, storage), attente > 5 min._ [KC-01, KC-02, KC-03, KC-06, FR-02, FR-04]
 - [x] **18. Interceptor + erreurs** — Bearer vers la gateway uniquement, gestion 401/403/429, page « Mon profil » (`/api/me`).
       _Test : onglet réseau ; provoquer 403 et 429._ [FR-01, FR-05, FR-06]
-- [ ] **19. Écrans annonces** — liste paginée + filtre, détail, mes annonces, formulaire création/modification.
+- [x] **19. Écrans annonces** — liste paginée + filtre, détail, mes annonces, formulaire création/modification.
       _Test : parcours alice dans le navigateur._ [MT-01…MT-04 via UI]
 - [ ] **20. Modération, catégories, guards** — écrans MODERATEUR/ADMIN, menus et routes selon les rôles.
       _Test : alice / modo / admin._ [FR-03, MT-06, MT-08 via UI]

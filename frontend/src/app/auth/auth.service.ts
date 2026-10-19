@@ -26,6 +26,8 @@ export class AuthService {
 
   private readonly claims = computed(() => decoder(this.jeton()));
   readonly connecte = computed(() => this.jeton() !== null);
+  /** Claim sub : même valeur que X_USER_ID côté backend, donc que auteurId des annonces. */
+  readonly userId = computed(() => this.claims()?.sub ?? '');
   readonly nomUtilisateur = computed(() => this.claims()?.preferred_username ?? '');
   readonly roles = computed<Role[]>(() =>
     (this.claims()?.realm_access?.roles ?? []).filter((r): r is Role => ['USER', 'MODERATEUR', 'ADMIN'].includes(r)),
