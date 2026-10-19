@@ -442,7 +442,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
   avec données et realm conservés (DEP-04) ; DEP-02/03/05 vérifiés ; backend 56/56. Premier build SANS cache > 3 min
   (téléchargements Maven/npm) → préconstruire avec `docker compose build` avant la démo.
 - `test-gateway.ps1` : **27/27 rejoué seul après les bonus** (GW 11/11, RL 6/6, MT 10/10).
-  manque de mémoire de la machine pendant que Maven/Testcontainers tournaient en parallèle) → ne pas lancer les deux en même temps.
+  Ne pas le lancer en parallèle de `mvnw verify` (mémoire de la machine insuffisante, processus arrêté une fois).
 - **Secret partagé** : `GATEWAY_SECRET` (.env) → Kong via le vault `env` (bundled dans Kong OSS) référencé par
   `secret_backend: "{vault://env/gateway-secret}"` (champ `referenceable = true` du schéma) → en-tête `X-Gateway-Secret`
   → `GatewaySecretFilter` (avant HeaderAuthenticationFilter, 403 sinon). Vide = désactivé avec WARN au démarrage
