@@ -382,6 +382,30 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - [x] **22. README final** — schéma d'architecture, comptes de test, choix justifiés, procédure d'extraction de la clé publique.
 - [x] **23. Bonus (partiel)** — faits : `azp`, `correlation-id`, secret partagé Kong→backend ; non faits : Redis, kong.yml depuis le JWKS.
 
+### Phase G — Déploiement (VM Hostinger, HTTPS sslip.io, GitHub Actions, Docker Hub)
+
+Décisions : VM Hostinger (accès `root` par clé SSH déjà installée), pas de domaine → **sslip.io**
+(`app.<ip>.sslip.io`, `api.<ip>.sslip.io`, `auth.<ip>.sslip.io`), certificats Let's Encrypt via **Caddy** ;
+dépôt GitHub **privé** créé par l'utilisateur ; images sur **Docker Hub** ; secrets saisis par l'utilisateur dans GitHub.
+HTTPS obligatoire : PKCE (`crypto.subtle`) n'existe qu'en contexte sécurisé, et Keycloak exige HTTPS hors réseau privé.
+Contrainte : le fonctionnement **local** de l'énoncé (localhost:4200 / 8080 / 8180, `docker compose up`) reste inchangé.
+
+- [ ] **24. Images légères** — backend : JRE réduit par `jlink` + jar en couches Spring Boot (cible < 200 Mo, contre 402) ;
+      labels OCI ; utilisateur non root. _Test : taille, conteneur healthy, 63 tests, test-gateway._
+- [ ] **25. Configuration par environnement** — URLs publiques en variables (Keycloak `KC_HOSTNAME`, redirect/web origins
+      du realm, `iss`/`key` dans Kong, origine CORS, URL de l'API et de Keycloak lues par Angular au démarrage via
+      `config.json` généré par Nginx) ; valeurs par défaut = localhost. _Test : stack locale intacte (test-gateway 27/27)._
+- [ ] **26. Compose de production + Caddy** — `deploy/docker-compose.prod.yml` (images Docker Hub, aucun build),
+      Caddy en reverse proxy HTTPS (seuls 80/443 ouverts), `deploy/.env.prod.example`. _Test : `docker compose config`, essai local._
+- [ ] **27. Préparation de la VM** — vérification OS, installation Docker + plugin compose, pare-feu (22, 80, 443),
+      dossier de déploiement, clé SSH dédiée au déploiement. _Test : `docker run hello-world` sur la VM._
+- [ ] **28. Dépôt GitHub** — l'utilisateur crée le dépôt privé vide ; ajout du remote ; premier push par l'utilisateur.
+- [ ] **29. Pipeline CI** — GitHub Actions : tests backend (Testcontainers), build frontend, build + push des images
+      sur Docker Hub (tags `sha` et `latest`) sur `main`. Secrets : `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.
+- [ ] **30. Pipeline CD** — déploiement SSH : copie des fichiers de `deploy/`, `.env` de production généré depuis les
+      secrets GitHub, `docker compose pull && up -d --wait`, test de fumée HTTPS.
+- [ ] **31. Recette en production** — login PKCE en HTTPS, `test-gateway.ps1` contre l'URL publique, README « Déploiement ».
+
 ### Questions ouvertes (à trancher avant l'étape concernée)
 - ~~**Q1 — secrets du realm**~~ → **tranché (option A)** : placeholders `${VAR}` dans `realm-annonces.json`, substitués par
   Keycloak à l'import depuis l'environnement du conteneur ; valeurs de démo dans `.env.example`. Vaut aussi pour la clé privée RSA (étape 5).
