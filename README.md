@@ -62,7 +62,7 @@ Console Keycloak : compte `KC_BOOTSTRAP_ADMIN_*` du `.env`.
 2. Chaque appel à l'API porte `Authorization: Bearer …`, et **seulement** les appels vers la gateway.
 3. Kong vérifie la signature avec la clé publique du realm figée dans `kong.yml`, l'émetteur (`iss`) et l'expiration (`exp`),
    supprime les headers d'identité éventuellement forgés et `Authorization`, pose `X_USER_ID` (claim `sub`) et
-   `X_ROLE_ID` (rôles du realm), puis compte 3 appels / minute / utilisateur.
+   `X_ROLE_ID` (rôles du realm), puis compte 60 appels / minute / utilisateur (l'énoncé en fixe 3 : relevé pour un usage réel de la SPA).
 4. Le backend reconstruit l'`Authentication` Spring Security depuis ces headers ; `@PreAuthorize` autorise ou refuse.
 
 ## Choix techniques
@@ -73,7 +73,7 @@ Console Keycloak : compte `KC_BOOTSTRAP_ADMIN_*` du `.env`.
 | Librairie OIDC | `angular-oauth2-oidc` | standard OIDC sans dépendance à Keycloak ; chaque étape du flux (discovery, PKCE, refresh) reste explicite |
 | Stockage des tokens | `sessionStorage` | jamais `localStorage` ; perdus à la fermeture de l'onglet |
 | Renouvellement | refresh token à 75 % de la durée de vie | pas d'iframe de « silent refresh », compatible avec un token de 5 min |
-| Rôles dans le front | lus dans l'access token | aucun appel API pour construire les menus (quota de 3 requêtes / minute) ; simple confort d'affichage |
+| Rôles dans le front | lus dans l'access token | aucun appel API pour construire les menus (quota de requêtes par minute partagé par toute l'API) ; simple confort d'affichage |
 | 429 côté front | compte à rebours lu dans `Retry-After`, GET rejoué automatiquement | l'écran se remplit seul ; les écritures ne sont jamais rejouées |
 | Secrets du realm | placeholders `${…}` dans `realm-annonces.json`, valeurs dans `.env` | aucun secret dans le realm versionné ; démarrage sans action manuelle |
 | Clé de signature | paire RSA **fixe** importée avec le realm | le plugin `jwt` de Kong OSS ne lit pas le JWKS : la clé ne doit jamais changer |
@@ -156,7 +156,7 @@ Le password grant est interdit sur `annonces-front` (KC-04) : `get-token.ps1` re
 |---|---|
 | KC-01 à 03 | ouvrir http://localhost:4200, outils de développement → onglet Réseau : `code_challenge_method=S256`, `POST /token` |
 | FR-03 | alice : pas de « Modération » ni de « Catégories » ; `/moderation` tapé à la main → retour à la liste |
-| FR-05 | recharger 4 fois une page en moins d'une minute → bandeau avec compte à rebours |
+| FR-05 | dépasser 60 appels en moins d'une minute → bandeau avec compte à rebours |
 | FR-06 | modo ouvre `/annonces/<id d'une annonce d'alice>/modifier` et enregistre → « Accès refusé », toujours connecté |
 | GW-08 | `docker compose logs backend` → `X_USER_ID=…, X_ROLE_ID=…, Authorization=absent` |
 | DEP-02 / GW-10 | `docker compose ps` : 8081, 5432 et 8001 non publiés |

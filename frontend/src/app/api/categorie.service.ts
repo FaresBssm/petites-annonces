@@ -5,7 +5,7 @@ import { config } from '../config';
 import { Categorie } from './modeles';
 
 /**
- * Catégories chargées une fois puis gardées en mémoire : avec 3 requêtes / minute,
+ * Catégories chargées une fois puis gardées en mémoire : avec un quota de requêtes par minute,
  * chaque appel évité compte. Le cache est rafraîchi après création ou suppression.
  */
 @Injectable({ providedIn: 'root' })

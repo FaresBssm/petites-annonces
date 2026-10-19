@@ -24,7 +24,7 @@ export class NotificationService {
     if (this.finLimite() !== null && this.secondesRestantes() > 0) {
       return {
         type: 'attention',
-        message: `Limite de 3 requêtes par minute atteinte : réessayez dans ${this.secondesRestantes()} s.`,
+        message: `Limite de requêtes par minute atteinte : réessayez dans ${this.secondesRestantes()} s.`,
       };
     }
     return this.courante();

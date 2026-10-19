@@ -81,11 +81,11 @@ services:
               # lue dans la variable d'environnement GATEWAY_SECRET du conteneur (.env), jamais écrite ici.
               secret_backend: "{vault://env/gateway-secret}"
 
-          # 3 appels / minute PAR UTILISATEUR (compteur indexé sur X_USER_ID posé par identity-headers),
+          # 60 appels / minute PAR UTILISATEUR (compteur indexé sur X_USER_ID posé par identity-headers),
           # sur tous les endpoints /api/**. Au-delà : 429 + Retry-After, le backend n'est pas appelé.
           - name: rate-limiting
             config:
-              minute: 22
+              minute: 60
               policy: local
               limit_by: header
               header_name: X_USER_ID
