@@ -3,6 +3,7 @@
 
   <nav class="menu">
     <a routerLink="/annonces" routerLinkActive="actif" [routerLinkActiveOptions]="{ exact: true }">Annonces</a>
+    <a routerLink="/profil" routerLinkActive="actif">Mon profil</a>
   </nav>
 
   @if (auth.connecte()) {
@@ -13,6 +14,13 @@
     </div>
   }
 </header>
+
+@if (notifications.notification(); as n) {
+  <div class="notification {{ n.type }}" role="alert">
+    <span>{{ n.message }}</span>
+    <button type="button" aria-label="Fermer" (click)="notifications.fermer()">×</button>
+  </div>
+}
 
 <main class="contenu">
   <router-outlet />
