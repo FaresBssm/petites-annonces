@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { OAuthService } from 'angular-oauth2-oidc';
 import { filter } from 'rxjs';
-import { authConfig } from './auth.config';
+import { creerAuthConfig } from './auth.config';
 
 export type Role = 'USER' | 'MODERATEUR' | 'ADMIN';
 
@@ -33,7 +33,7 @@ export class AuthService {
 
   /** Exécuté avant le démarrage de l'application (provideAppInitializer). */
   async initialiser(): Promise<void> {
-    this.oauth.configure(authConfig);
+    this.oauth.configure(creerAuthConfig());
     this.oauth.events.subscribe(() => this.synchroniser());
     // Refresh token expiré ou session Keycloak fermée : retour au login
     this.oauth.events

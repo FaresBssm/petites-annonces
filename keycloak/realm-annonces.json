@@ -57,13 +57,13 @@
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "frontchannelLogout": true,
-      "rootUrl": "http://localhost:4200",
+      "rootUrl": "${PUBLIC_APP_URL}",
       "baseUrl": "/",
-      "redirectUris": ["http://localhost:4200/*"],
-      "webOrigins": ["http://localhost:4200"],
+      "redirectUris": ["${PUBLIC_APP_URL}/*"],
+      "webOrigins": ["${PUBLIC_APP_URL}"],
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:4200/*",
+        "post.logout.redirect.uris": "${PUBLIC_APP_URL}/*",
         "oauth2.device.authorization.grant.enabled": "false",
         "oidc.ciba.grant.enabled": "false",
         "standard.token.exchange.enabled": "false"

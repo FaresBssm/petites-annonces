@@ -392,7 +392,7 @@ Contrainte : le fonctionnement **local** de l'énoncé (localhost:4200 / 8080 / 
 
 - [x] **24. Images légères** — backend : JRE réduit par `jlink` + jar en couches Spring Boot (cible < 200 Mo, contre 402) ;
       labels OCI ; utilisateur non root. _Test : taille, conteneur healthy, 63 tests, test-gateway._
-- [ ] **25. Configuration par environnement** — URLs publiques en variables (Keycloak `KC_HOSTNAME`, redirect/web origins
+- [x] **25. Configuration par environnement** — URLs publiques en variables (Keycloak `KC_HOSTNAME`, redirect/web origins
       du realm, `iss`/`key` dans Kong, origine CORS, URL de l'API et de Keycloak lues par Angular au démarrage via
       `config.json` généré par Nginx) ; valeurs par défaut = localhost. _Test : stack locale intacte (test-gateway 27/27)._
 - [ ] **26. Compose de production + Caddy** — `deploy/docker-compose.prod.yml` (images Docker Hub, aucun build),
@@ -485,3 +485,9 @@ Contrainte : le fonctionnement **local** de l'énoncé (localhost:4200 / 8080 / 
 - **VM de déploiement = serveur PARTAGÉ** (~30 conteneurs d'autres projets, `/opt/master-affiliation`) : ports 80/443 tenus par un
   Nginx commun (`reverse-proxy`) + `certbot`, réseau Docker `proxy`, un fichier par site dans `reverse-proxy/conf.d/`
   (modèle `_template.conf.example`), certificats via `reverse-proxy/init-letsencrypt.sh`. Pas de Caddy possible sur 80/443.
+- **Config par environnement (étape 25)** : `PUBLIC_APP_URL` / `PUBLIC_API_URL` / `PUBLIC_AUTH_URL` (défauts localhost).
+  Angular lit `/config.json` (généré par `frontend/docker-entrypoint.d/40-config-json.sh`) avant le bootstrap ;
+  realm : `${PUBLIC_APP_URL}` dans redirect/web origins/post-logout ; Keycloak : `KC_HOSTNAME=${PUBLIC_AUTH_URL}` ;
+  Kong : `kong/kong.yml` inchangé (localhost, conforme GW-11), `kong/render-config.sh` produit la variante de prod
+  (iss, origine CORS échappée, backend unique, clé publique) — validé par `kong config parse`.
+- Démarrage complet après `down -v` avec reconstruction des deux images : 177 s (limite DEP-01 : 180 s) → préconstruire.

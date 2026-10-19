@@ -46,7 +46,9 @@ services:
       KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
       # URL publique vue par le navigateur : fixe le claim iss des tokens à
       # http://localhost:8180/realms/annonces, quelle que soit l'URL d'appel.
-      KC_HOSTNAME: http://localhost:8180
+      KC_HOSTNAME: ${PUBLIC_AUTH_URL:-http://localhost:8180}
+      # URL de la SPA, substituée dans le realm (redirect URI, web origin, retour après déconnexion)
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost:4200}
       # Endpoints /health sur le port de management 9000 (non publié)
       KC_HEALTH_ENABLED: "true"
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
@@ -136,6 +138,10 @@ services:
 
   frontend:
     build: ./frontend
+    environment:
+      # Écrits dans /config.json au démarrage (adresses vues par le navigateur)
+      PUBLIC_AUTH_URL: ${PUBLIC_AUTH_URL:-http://localhost:8180}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
     ports:
       - "4200:80"
     # Côté navigateur uniquement : la SPA parle à Kong (8080) et à Keycloak (8180) depuis le navigateur

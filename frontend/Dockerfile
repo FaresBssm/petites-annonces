@@ -14,5 +14,7 @@ FROM nginx:1.29-alpine-slim
 LABEL org.opencontainers.image.title="petites-annonces-frontend" \
       org.opencontainers.image.description="SPA Angular PetitesAnnonces servie par Nginx"
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Génère /config.json (URL de Keycloak et de la gateway) au démarrage, depuis l'environnement
+COPY --chmod=755 docker-entrypoint.d/40-config-json.sh /docker-entrypoint.d/40-config-json.sh
 COPY --from=build /build/dist/petites-annonces-front/browser /usr/share/nginx/html
 EXPOSE 80
