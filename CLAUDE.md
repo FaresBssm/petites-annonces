@@ -402,7 +402,7 @@ Contrainte : le fonctionnement **local** de l'énoncé (localhost:4200 / 8080 / 
 - [x] **28. Dépôt GitHub** — l'utilisateur crée le dépôt privé vide ; ajout du remote ; premier push par l'utilisateur.
 - [x] **29. Pipeline CI** — GitHub Actions : tests backend (Testcontainers), build frontend, build + push des images
       sur Docker Hub (tags `sha` et `latest`) sur `main`. Secrets : `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`.
-- [ ] **30. Pipeline CD** — déploiement SSH : copie des fichiers de `deploy/`, `.env` de production généré depuis les
+- [x] **30. Pipeline CD** — déploiement SSH : copie des fichiers de `deploy/`, `.env` de production généré depuis les
       secrets GitHub, `docker compose pull && up -d --wait`, test de fumée HTTPS.
 - [ ] **31. Recette en production** — login PKCE en HTTPS, `test-gateway.ps1` contre l'URL publique, README « Déploiement ».
 
@@ -502,7 +502,7 @@ Contrainte : le fonctionnement **local** de l'énoncé (localhost:4200 / 8080 / 
 - Un commit `4bfe604` d'une AUTRE session Claude (pipeline GHCR + tunnel SSH, docker-compose.prod.yml à la racine) a été
   remplacé à la demande de l'utilisateur par la pipeline Docker Hub + HTTPS public. Une seule session à la fois sur ce dépôt.
 - Pipeline `.github/workflows/ci-cd.yml` : tests → images Docker Hub (`latest` + SHA) → déploiement SSH **seulement si la
-  variable de dépôt `DEPLOY_ENABLED=true`** (à créer après l'étape 27, avec l'accord de l'utilisateur).
+  variable `DEPLOY_ENABLED`** : verrou retiré après la mise en ligne (la variable n était pas lue, job "skipped"), déploiement à chaque push sur main.
 - **Mise en ligne (étape 27, 19/10/2026)** : clé de déploiement ajoutée à /root/.ssh/authorized_keys, fichiers dans
   /opt/petites-annonces, stack `pa-*` healthy en 48 s, `ajouter-certificats.sh` : 3 certificats Let's Encrypt (exp. 17/01/2027),
   `nginx -t` OK + reload à chaud. Vérifié : https://app.72-60-188-97.sslip.io (200), issuer https://auth…/realms/annonces,

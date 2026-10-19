@@ -1,11 +1,10 @@
 # Intégration et déploiement continus PetitesAnnonces
 #   - push / pull request : tests d'intégration du backend (Testcontainers PostgreSQL 16)
 #   - push sur main, tests verts : images construites et publiées sur Docker Hub (tags "latest" et SHA du commit)
-#   - push sur main, images publiées, ET variable de dépôt DEPLOY_ENABLED=true : déploiement SSH sur la VM
+#   - push sur main, images publiées : déploiement SSH sur la VM
 #     (HTTPS public via le reverse proxy Nginx partagé, cf. deploy/)
 #
 # Secrets du dépôt : DOCKERHUB_USERNAME, DOCKERHUB_TOKEN, VM_HOST, VM_USER, VM_SSH_KEY, VM_SSH_KNOWN_HOSTS, PROD_ENV_FILE
-# Variable du dépôt : DEPLOY_ENABLED (true pour activer le déploiement)
 name: CI/CD
 
 on:
@@ -101,8 +100,7 @@ jobs:
   deploy:
     name: Déploiement sur la VM (SSH)
     needs: images
-    # Désactivé tant que la variable de dépôt DEPLOY_ENABLED ne vaut pas "true"
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     concurrency:

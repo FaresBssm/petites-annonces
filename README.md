@@ -192,13 +192,13 @@ Aucun port n'est publié par la stack ; backend et PostgreSQL restent sur le ré
 | Événement | Étapes |
 |---|---|
 | Pull request | tests d'intégration du backend (`mvnw verify`, Testcontainers) |
-| Push sur `main` | tests → images `faresbssm/petites-annonces-{backend,frontend}` sur Docker Hub (tags `latest` et SHA) → déploiement si `DEPLOY_ENABLED=true` |
+| Push sur `main` | tests → images `faresbssm/petites-annonces-{backend,frontend}` sur Docker Hub (tags `latest` et SHA) → déploiement sur la VM |
 
 Déploiement : copie de `deploy/`, `kong/`, du realm et de `init.sql` dans `/opt/petites-annonces`, `.env` de production
 reconstruit depuis le secret `PROD_ENV_FILE` (avec l'image du commit, et non `latest`), `docker compose pull` puis
 `up -d --wait`, et test de fumée HTTPS (application, `iss` de Keycloak, 401 de la gateway sans token).
 
-### Secrets et variable GitHub Actions
+### Secrets GitHub Actions
 
 *Settings → Secrets and variables → Actions*
 
@@ -211,7 +211,6 @@ reconstruit depuis le secret `PROD_ENV_FILE` (avec l'image du commit, et non `la
 | Secret | `VM_SSH_KEY` | clé **privée** dédiée au déploiement (la publique est dans `authorized_keys` de la VM) |
 | Secret | `VM_SSH_KNOWN_HOSTS` | `ssh-keyscan <ip>` : empreintes vérifiées de la VM |
 | Secret | `PROD_ENV_FILE` | contenu complet de `deploy/.env.prod` |
-| Variable | `DEPLOY_ENABLED` | `true` pour activer le job de déploiement |
 
 ### Mise en place initiale (une fois, sur la VM)
 
