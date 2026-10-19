@@ -390,7 +390,7 @@ dépôt GitHub **privé** créé par l'utilisateur ; images sur **Docker Hub** ;
 HTTPS obligatoire : PKCE (`crypto.subtle`) n'existe qu'en contexte sécurisé, et Keycloak exige HTTPS hors réseau privé.
 Contrainte : le fonctionnement **local** de l'énoncé (localhost:4200 / 8080 / 8180, `docker compose up`) reste inchangé.
 
-- [ ] **24. Images légères** — backend : JRE réduit par `jlink` + jar en couches Spring Boot (cible < 200 Mo, contre 402) ;
+- [x] **24. Images légères** — backend : JRE réduit par `jlink` + jar en couches Spring Boot (cible < 200 Mo, contre 402) ;
       labels OCI ; utilisateur non root. _Test : taille, conteneur healthy, 63 tests, test-gateway._
 - [ ] **25. Configuration par environnement** — URLs publiques en variables (Keycloak `KC_HOSTNAME`, redirect/web origins
       du realm, `iss`/`key` dans Kong, origine CORS, URL de l'API et de Keycloak lues par Angular au démarrage via
@@ -476,3 +476,12 @@ Contrainte : le fonctionnement **local** de l'énoncé (localhost:4200 / 8080 / 
 - Écran Catégories vérifié dans Chrome (admin) : création, doublon insensible à la casse (409 sous le champ),
   catégorie utilisée (409, MT-09), suppression ; guard ADMIN (alice redirigée depuis /categories).
 - **Toutes les étapes hors bonus sont terminées** ; bonus faits : azp, correlation-id, secret partagé.
+- **Images (étape 24)** : backend = build Maven → JRE `jlink` (jdeps + modules dynamiques, 23 modules) → `alpine:3.22`,
+  jar extrait en couches (`-Djarmode=tools extract --layers --launcher`, lancement par `JarLauncher`, pas de app.jar) :
+  disque 261 → **129 Mo**, transfert 122 → **94 Mo**, mise à jour du code = couche de 274 Ko. Frontend = `nginx:1.29-alpine-slim` :
+  disque 63 → **15 Mo**, transfert 25 → **6 Mo**. Docker Desktop (containerd) affiche des tailles gonflées : mesurer avec
+  `du -sxm /` dans le conteneur ou `docker save | gzip | wc -c`.
+- `KONG_DNS_NOT_FOUND_TTL=1` : sinon 503 "name resolution failed" pendant 30 s après la recréation du backend (CD).
+- **VM de déploiement = serveur PARTAGÉ** (~30 conteneurs d'autres projets, `/opt/master-affiliation`) : ports 80/443 tenus par un
+  Nginx commun (`reverse-proxy`) + `certbot`, réseau Docker `proxy`, un fichier par site dans `reverse-proxy/conf.d/`
+  (modèle `_template.conf.example`), certificats via `reverse-proxy/init-letsencrypt.sh`. Pas de Caddy possible sur 80/443.
