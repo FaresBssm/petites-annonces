@@ -1,1 +1,80 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --fond: #f6f7f9;
+  --surface: #ffffff;
+  --texte: #1d2433;
+  --texte-doux: #5b6475;
+  --bordure: #dfe3ea;
+  --accent: #2557d6;
+  --accent-fonce: #1b44ab;
+  --succes: #1f7a4d;
+  --attention: #9a6200;
+  --danger: #b42318;
+  --rayon: 8px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--texte);
+  background: var(--fond);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+a { color: var(--accent); }
+h1 { font-size: 1.5rem; margin: 0 0 1rem; }
+h2 { font-size: 1.15rem; margin: 1.5rem 0 .75rem; }
+
+.entete {
+  display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+  padding: .75rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--bordure);
+}
+.marque { font-weight: 700; font-size: 1.1rem; color: var(--texte); text-decoration: none; }
+.menu { display: flex; gap: 1rem; flex: 1; flex-wrap: wrap; }
+.menu a { color: var(--texte-doux); text-decoration: none; padding: .25rem 0; border-bottom: 2px solid transparent; }
+.menu a.actif, .menu a:hover { color: var(--texte); border-bottom-color: var(--accent); }
+.utilisateur { display: flex; align-items: center; gap: .75rem; }
+.utilisateur .nom { font-weight: 600; }
+.utilisateur .roles { font-size: .8rem; color: var(--texte-doux); }
+
+.contenu { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+
+.carte {
+  background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--rayon);
+  padding: 1rem 1.25rem; margin-bottom: .75rem;
+}
+.carte h3 { margin: 0 0 .35rem; font-size: 1.05rem; }
+.meta { color: var(--texte-doux); font-size: .85rem; }
+.prix { font-weight: 700; }
+
+.bouton {
+  font: inherit; border: 1px solid var(--accent); background: var(--accent); color: #fff;
+  padding: .45rem .9rem; border-radius: var(--rayon); cursor: pointer; text-decoration: none; display: inline-block;
+}
+.bouton:hover { background: var(--accent-fonce); }
+.bouton:disabled { opacity: .5; cursor: not-allowed; }
+.bouton.secondaire { background: transparent; color: var(--accent); }
+.bouton.danger { background: var(--danger); border-color: var(--danger); }
+.actions { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-top: .75rem; }
+
+.statut { display: inline-block; font-size: .75rem; font-weight: 600; padding: .1rem .5rem; border-radius: 999px; }
+.statut.PUBLIEE { background: #e3f4ea; color: var(--succes); }
+.statut.EN_ATTENTE { background: #fff3dc; color: var(--attention); }
+.statut.REJETEE { background: #fde8e6; color: var(--danger); }
+
+form .champ { display: flex; flex-direction: column; gap: .3rem; margin-bottom: 1rem; }
+label { font-weight: 600; font-size: .9rem; }
+input, textarea, select {
+  font: inherit; padding: .5rem .6rem; border: 1px solid var(--bordure); border-radius: var(--rayon); background: #fff;
+}
+textarea { min-height: 8rem; resize: vertical; }
+.erreur-champ { color: var(--danger); font-size: .85rem; }
+
+.barre { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 1rem; }
+.vide { color: var(--texte-doux); font-style: italic; }
+.pagination { display: flex; gap: .75rem; align-items: center; margin-top: 1rem; }
+
+.notification {
+  max-width: 960px; margin: 1rem auto 0; padding: .75rem 1rem; border-radius: var(--rayon);
+  display: flex; justify-content: space-between; gap: 1rem; align-items: center;
+}
+.notification.erreur { background: #fde8e6; color: var(--danger); border: 1px solid #f5c2bc; }
+.notification.attention { background: #fff3dc; color: var(--attention); border: 1px solid #f3dca8; }
+.notification.succes { background: #e3f4ea; color: var(--succes); border: 1px solid #b9e1c9; }
+.notification button { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: inherit; }

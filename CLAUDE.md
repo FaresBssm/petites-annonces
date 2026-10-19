@@ -365,7 +365,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 ### Phase E — Frontend
 - [x] **16. Squelette Angular + Nginx** — app Angular 19, Dockerfile multi-stage, conf Nginx (fallback SPA), service `frontend`, healthcheck.
       _Test : `localhost:4200` sert l'app._ [DEP-01✱]
-- [ ] **17. Authentification OIDC** — `angular-oauth2-oidc` : code + PKCE, `sessionStorage`, login forcé, refresh automatique,
+- [x] **17. Authentification OIDC** — `angular-oauth2-oidc` : code + PKCE, `sessionStorage`, login forcé, refresh automatique,
       logout `end_session`.
       _Test : DevTools (URL d'autorisation, `/token`, storage), attente > 5 min._ [KC-01, KC-02, KC-03, KC-06, FR-02, FR-04]
 - [ ] **18. Interceptor + erreurs** — Bearer vers la gateway uniquement, gestion 401/403/429, page « Mon profil » (`/api/me`).

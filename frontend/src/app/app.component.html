@@ -1,6 +1,19 @@
 <header class="entete">
-  <span class="marque">PetitesAnnonces</span>
+  <a class="marque" routerLink="/annonces">PetitesAnnonces</a>
+
+  <nav class="menu">
+    <a routerLink="/annonces" routerLinkActive="actif" [routerLinkActiveOptions]="{ exact: true }">Annonces</a>
+  </nav>
+
+  @if (auth.connecte()) {
+    <div class="utilisateur">
+      <span class="nom">{{ auth.nomUtilisateur() }}</span>
+      <span class="roles">{{ auth.roles().join(' · ') }}</span>
+      <button type="button" class="bouton secondaire" (click)="auth.seDeconnecter()">Se déconnecter</button>
+    </div>
+  }
 </header>
+
 <main class="contenu">
   <router-outlet />
 </main>
