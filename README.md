@@ -134,7 +134,7 @@ La clé de `.env.example` est une **clé de démonstration** dédiée à ce proj
 # Backend : 56 tests d'intégration (Testcontainers PostgreSQL 16), critères BK et MT
 cd backend; $env:JAVA_HOME="<chemin d'un JDK 21>"; .\mvnw verify; cd ..
 
-# Gateway de bout en bout : 27 vérifications GW-01→11, RL-01→05, MT-01→10 (~4 min, attentes du rate limiting)
+# Gateway de bout en bout : 27 vérifications GW-01→11, RL-01→05, MT-01→10 (~2 min ; limite lue dans kong/kong.yml, `-Limite N` pour la forcer)
 .\scripts\test-gateway.ps1
 .\scripts\test-gateway.ps1 -Sections GW,RL      # sans les règles métier
 ```

@@ -7,21 +7,30 @@
   Les tokens sont obtenus par le vrai flux Authorization Code + PKCE (scripts/get-token.ps1),
   les tokens invalides sont fabriques par scripts/forge-jwt.ps1.
 
-  Rate limiting (3 appels / minute / utilisateur) : hors section RL, un 429 est attendu
-  (Retry-After) puis l'appel est rejoue. La suite complete dure donc ~5 minutes.
+  Rate limiting : la limite par minute et par utilisateur est lue dans kong/kong.yml (-Limite pour la forcer).
+  Hors section RL, un 429 eventuel (Retry-After) est attendu puis l'appel est rejoue.
 
 .EXAMPLE
   .\scripts\test-gateway.ps1                    # GW + RL + MT
   .\scripts\test-gateway.ps1 -Sections GW,RL    # sans les regles metier
+  .\scripts\test-gateway.ps1 -Limite 3          # limite differente de celle de kong/kong.yml
 #>
 param(
   [ValidateSet("GW", "RL", "MT")][string[]]$Sections = @("GW", "RL", "MT"),
-  [string]$Gateway = "http://localhost:8080"
+  [string]$Gateway = "http://localhost:8080",
+  [int]$Limite = 0
 )
 $ErrorActionPreference = "Continue"
 # Corps envoyes a curl en UTF-8 SANS BOM ([Text.Encoding]::UTF8 en ajoute un sous PowerShell 5.1 -> JSON illisible)
 $OutputEncoding = New-Object System.Text.UTF8Encoding $false
 Push-Location (Join-Path $PSScriptRoot "..")
+
+# Limite du plugin rate-limiting (appels / minute / utilisateur), lue dans kong/kong.yml par defaut
+if ($Limite -le 0) {
+  $m = Select-String -Path "kong/kong.yml" -Pattern '^\s*minute:\s*(\d+)' | Select-Object -First 1
+  if (-not $m) { throw "Limite introuvable dans kong/kong.yml (minute: N) : la passer avec -Limite" }
+  $Limite = [int]$m.Matches[0].Groups[1].Value
+}
 
 $script:resultats = New-Object System.Collections.ArrayList
 $debut = Get-Date
@@ -156,21 +165,22 @@ if ($Sections -contains "GW") {
 # ---------------------------------------------------------------- RL
 
 if ($Sections -contains "RL") {
-  Titre "Gateway : rate limiting (RL-01 a RL-05)"
+  Titre "Gateway : rate limiting (RL-01 a RL-05), limite $Limite / minute"
   $tA = Token alice; $tB = Token bob
   $attente = 61 - (Get-Date).Second
   Write-Host "                (attente de $attente s : debut d'une nouvelle fenetre d'une minute)" -ForegroundColor DarkYellow
   Start-Sleep -Seconds $attente
   $tA = Token alice; $tB = Token bob
 
-  $codes = @(1..3 | ForEach-Object { (Appel -Chemin "/api/annonces" -Jeton $tA).Code })
-  Verifier "RL-01" "3 appels d'alice en moins d'une minute -> 200" ((($codes | Where-Object { $_ -eq 200 }).Count) -eq 3) "codes : $($codes -join ',')"
+  $codes = @(1..$Limite | ForEach-Object { (Appel -Chemin "/api/annonces" -Jeton $tA).Code })
+  $nb200 = @($codes | Where-Object { $_ -eq 200 }).Count
+  Verifier "RL-01" "$Limite appels d'alice en moins d'une minute -> 200" ($nb200 -eq $Limite) "200 : $nb200 / $Limite ; autres codes : $(@($codes | Where-Object { $_ -ne 200 } | Select-Object -Unique) -join ',')"
 
   $avant = RequetesBackend
   $r = Appel -Chemin "/api/categories" -Jeton $tA -Entetes @{ "Origin" = "http://localhost:4200" }
   Start-Sleep -Milliseconds 500
   $retry = $r.Headers['retry-after']
-  Verifier "RL-02" "4e appel (autre endpoint) -> 429 + Retry-After, backend non appele" (($r.Code -eq 429) -and ($retry -match '^\d+$') -and ((RequetesBackend) -eq $avant)) "HTTP $($r.Code) Retry-After=$retry"
+  Verifier "RL-02" "$($Limite + 1)e appel (autre endpoint) -> 429 + Retry-After, backend non appele" (($r.Code -eq 429) -and ($retry -match '^\d+$') -and ((RequetesBackend) -eq $avant)) "HTTP $($r.Code) Retry-After=$retry"
   Verifier "RL-02b" "Le 429 est lisible par la SPA (CORS + Retry-After expose)" (($r.Headers['access-control-allow-origin'] -eq 'http://localhost:4200') -and ($r.Headers['access-control-expose-headers'] -match 'Retry-After'))
 
   $r = Appel -Chemin "/api/annonces" -Jeton $tB
