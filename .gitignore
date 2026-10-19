@@ -25,3 +25,6 @@ Thumbs.db
 # --- Divers ---
 *.log
 tmp/
+
+# --- Déploiement : secrets de production générés localement ---
+deploy/.env.prod

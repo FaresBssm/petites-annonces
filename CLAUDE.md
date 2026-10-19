@@ -395,7 +395,7 @@ Contrainte : le fonctionnement **local** de l'énoncé (localhost:4200 / 8080 / 
 - [x] **25. Configuration par environnement** — URLs publiques en variables (Keycloak `KC_HOSTNAME`, redirect/web origins
       du realm, `iss`/`key` dans Kong, origine CORS, URL de l'API et de Keycloak lues par Angular au démarrage via
       `config.json` généré par Nginx) ; valeurs par défaut = localhost. _Test : stack locale intacte (test-gateway 27/27)._
-- [ ] **26. Compose de production + Caddy** — `deploy/docker-compose.prod.yml` (images Docker Hub, aucun build),
+- [x] **26. Compose de production + reverse proxy partagé** — `deploy/docker-compose.prod.yml` (images Docker Hub, aucun build),
       Caddy en reverse proxy HTTPS (seuls 80/443 ouverts), `deploy/.env.prod.example`. _Test : `docker compose config`, essai local._
 - [ ] **27. Préparation de la VM** — vérification OS, installation Docker + plugin compose, pare-feu (22, 80, 443),
       dossier de déploiement, clé SSH dédiée au déploiement. _Test : `docker run hello-world` sur la VM._
@@ -491,3 +491,9 @@ Contrainte : le fonctionnement **local** de l'énoncé (localhost:4200 / 8080 / 
   Kong : `kong/kong.yml` inchangé (localhost, conforme GW-11), `kong/render-config.sh` produit la variante de prod
   (iss, origine CORS échappée, backend unique, clé publique) — validé par `kong config parse`.
 - Démarrage complet après `down -v` avec reconstruction des deux images : 177 s (limite DEP-01 : 180 s) → préconstruire.
+- **Déploiement (étape 26)** : pas de Caddy (80/443 pris) → intégration au Nginx commun de la VM via
+  `deploy/reverse-proxy/petites-annonces.conf.template` + `ajouter-certificats.sh` (nos 3 domaines seulement, reload à chaud
+  après `nginx -t`, jamais `init-letsencrypt.sh` du serveur qui réémet TOUS les certificats et recrée le proxy).
+  Conteneurs `pa-*` sur le réseau externe `proxy` ; Keycloak en `start` (prod) derrière TLS ; Kong `KONG_TRUSTED_IPS`
+  pour garder X-Forwarded-Proto/Host/Port du proxy. Secrets prod : `scripts/generer-env-prod.ps1` → `deploy/.env.prod`
+  (ignoré par Git, nouvelle paire RSA) → secret GitHub `PROD_ENV_FILE`.
