@@ -284,7 +284,7 @@ Grille : DEP 15 · KC 15 · FR 15 · GW 20 · RL 10 · BK 10 · MT 10 · Qualit�
 Choix de versions (tags exacts vérifiés/épinglés à l'étape qui les introduit) :
 - Backend : **Spring Boot 3.5.16**, Java 21 ; build `maven:3.9.9-eclipse-temurin-21-alpine`, runtime `eclipse-temurin:21-jre-alpine`
   (épinglé étape 6 ; package `com.petitesannonces`).
-- Frontend : **Angular 19** + **`angular-oauth2-oidc`** ; build `node:22-alpine`, runtime `nginx:*-alpine`.
+- Frontend : **Angular 19.2** + **`angular-oauth2-oidc` 19.0.0** ; build `node:22-alpine`, runtime `nginx:1.29-alpine` (étape 16).
 - Keycloak : `quay.io/keycloak/keycloak:26.8.1` (épinglé étape 3 ; 1er démarrage ≈ 76 s, à surveiller pour DEP-01 < 3 min). Kong : `kong:3.9.4` (dernière version OSS 3.x, épinglée étape 11). PostgreSQL : `postgres:16-alpine`.
 
 ---
@@ -363,7 +363,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
       _Test : exécution complète du script._ [livrable]
 
 ### Phase E — Frontend
-- [ ] **16. Squelette Angular + Nginx** — app Angular 19, Dockerfile multi-stage, conf Nginx (fallback SPA), service `frontend`, healthcheck.
+- [x] **16. Squelette Angular + Nginx** — app Angular 19, Dockerfile multi-stage, conf Nginx (fallback SPA), service `frontend`, healthcheck.
       _Test : `localhost:4200` sert l'app._ [DEP-01✱]
 - [ ] **17. Authentification OIDC** — `angular-oauth2-oidc` : code + PKCE, `sessionStorage`, login forcé, refresh automatique,
       logout `end_session`.
