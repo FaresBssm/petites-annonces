@@ -32,6 +32,10 @@ logging:
     # Trace des headers reçus de la gateway (GW-01, GW-08)
     com.petitesannonces.security.HeaderAuthenticationFilter: DEBUG
 
+petitesannonces:
+  # Bonus : secret partagé avec Kong (X-Gateway-Secret). Vide = vérification désactivée (avertissement au démarrage).
+  gateway-secret: ${GATEWAY_SECRET:}
+
 management:
   endpoints:
     web:

@@ -17,6 +17,7 @@ function IdentityHeaders:access(conf)
   --    (Nginx ignore déjà les headers contenant "_", on les supprime quand même explicitement)
   kong.service.request.clear_header("X_USER_ID")
   kong.service.request.clear_header("X_ROLE_ID")
+  kong.service.request.clear_header("X-Gateway-Secret")
 
   -- 2. Token déjà vérifié (signature, iss, exp) par le plugin jwt, qui le dépose ici
   local token = kong.ctx.shared.authenticated_jwt_token
@@ -60,6 +61,11 @@ function IdentityHeaders:access(conf)
 
   -- 4. Le token s'arrête à la gateway
   kong.service.request.clear_header("Authorization")
+
+  -- Bonus : preuve que la requête vient de la gateway (le backend refuse les appels sans ce secret)
+  if conf.secret_backend then
+    kong.service.request.set_header("X-Gateway-Secret", conf.secret_backend)
+  end
 end
 
 return IdentityHeaders

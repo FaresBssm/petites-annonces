@@ -43,6 +43,12 @@ public class SecurityProblemHandler implements AuthenticationEntryPoint, AccessD
         ecrire(request, response, HttpStatus.FORBIDDEN, "Accès refusé : droits insuffisants pour cette opération.");
     }
 
+    /** Refus émis directement par un filtre (ex. GatewaySecretFilter). */
+    public void refuser(HttpServletRequest request, HttpServletResponse response,
+                        HttpStatus status, String detail) throws IOException {
+        ecrire(request, response, status, detail);
+    }
+
     private void ecrire(HttpServletRequest request, HttpServletResponse response,
                         HttpStatus status, String detail) throws IOException {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);

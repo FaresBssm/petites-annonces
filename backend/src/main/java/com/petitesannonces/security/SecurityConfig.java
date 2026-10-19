@@ -1,6 +1,7 @@
 package com.petitesannonces.security;
 
 import jakarta.servlet.DispatcherType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -20,7 +21,10 @@ import org.springframework.security.web.authentication.AnonymousAuthenticationFi
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityProblemHandler problemHandler) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityProblemHandler problemHandler,
+                                            @Value("${petitesannonces.gateway-secret:}") String gatewaySecret)
+            throws Exception {
+        HeaderAuthenticationFilter headerFilter = new HeaderAuthenticationFilter();
         return http
                 // Pas de cookie de session, donc rien à protéger contre le CSRF
                 .csrf(AbstractHttpConfigurer::disable)
@@ -30,7 +34,9 @@ public class SecurityConfig {
                 .requestCache(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // Avant le filtre "anonyme" : s'il n'a rien posé, la requête devient anonyme
-                .addFilterBefore(new HeaderAuthenticationFilter(), AnonymousAuthenticationFilter.class)
+                .addFilterBefore(headerFilter, AnonymousAuthenticationFilter.class)
+                // Bonus : provenance vérifiée AVANT de faire confiance aux headers d'identité
+                .addFilterBefore(new GatewaySecretFilter(gatewaySecret, problemHandler), HeaderAuthenticationFilter.class)
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(problemHandler)
                         .accessDeniedHandler(problemHandler))

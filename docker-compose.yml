@@ -74,6 +74,8 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/annonces
       DB_USER: ${ANNONCES_DB_USER}
       DB_PASSWORD: ${ANNONCES_DB_PASSWORD}
+      # Bonus : seul un appel portant ce secret (posé par Kong) est accepté sur /api
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
     # Aucun port publié : seule la gateway (réseau internal) peut l'appeler (DEP-02)
     networks:
       - internal
@@ -96,6 +98,8 @@ services:
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
       # Plugins livrés avec Kong OSS + notre plugin Lua monté par volume
       KONG_PLUGINS: bundled,identity-headers
+      # Bonus : valeur de {vault://env/gateway-secret} dans kong.yml (vault "env" de Kong OSS)
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
       KONG_PROXY_LISTEN: 0.0.0.0:8000
       # Port vu par le client (hôte:conteneur) : X-Forwarded-Port = 8080 et non 8000,
       # pour que le backend construise des URL publiques correctes (Location du 201)

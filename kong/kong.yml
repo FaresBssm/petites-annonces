@@ -77,6 +77,9 @@ services:
                 - ADMIN
               # Bonus : seul un token émis pour la SPA est accepté (claim azp)
               client_attendu: annonces-front
+              # Bonus : secret partagé posé dans X-Gateway-Secret. Référence de vault : la valeur réelle est
+              # lue dans la variable d'environnement GATEWAY_SECRET du conteneur (.env), jamais écrite ici.
+              secret_backend: "{vault://env/gateway-secret}"
 
           # 3 appels / minute PAR UTILISATEUR (compteur indexé sur X_USER_ID posé par identity-headers),
           # sur tous les endpoints /api/**. Au-delà : 429 + Retry-After, le backend n'est pas appelé.

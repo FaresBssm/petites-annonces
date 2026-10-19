@@ -86,6 +86,16 @@ Console Keycloak : compte `KC_BOOTSTRAP_ADMIN_*` du `.env`.
 | Erreurs | `ProblemDetail` (RFC 9457) | 400 avec le détail par champ, 401, 403, 404, 409 |
 | Schéma | Flyway (V1 schéma, V2 catégories, V3 unicité insensible à la casse), Hibernate en `validate` | contraintes métier aussi garanties par la base |
 
+## Bonus réalisés
+
+| Bonus | Mise en œuvre | Vérification |
+|---|---|---|
+| Vérification du claim `azp` | `identity-headers` refuse (401) un token du realm non émis pour `annonces-front` | `forge-jwt.ps1 -RealmKey -Azp autre-client` → 401 |
+| Traçabilité `correlation-id` | plugin Kong `correlation-id` (renvoyé au client, même sur 401/429) ; `CorrelationIdFilter` met l'identifiant dans le MDC, `[cid=…]` sur chaque ligne de log du backend | `X-Correlation-ID` d'une réponse → `docker compose logs backend \| Select-String "<id>"` |
+| Secret partagé Kong → backend | `identity-headers` pose `X-Gateway-Secret` (valeur lue par Kong via `{vault://env/gateway-secret}`, jamais écrite dans `kong.yml`) ; `GatewaySecretFilter` refuse tout `/api` sans ce secret (403), comparaison en temps constant | un conteneur du réseau `internal` qui forge `X_USER_ID` sans le secret → 403 |
+
+Non réalisés : rate limiting partagé via Redis entre deux Kong, génération automatique de `kong.yml` depuis le JWKS.
+
 ## Clé de signature du realm
 
 Le plugin `jwt` de Kong OSS ne lit pas le JWKS : la clé publique du realm est **figée** dans `kong/kong.yml`.

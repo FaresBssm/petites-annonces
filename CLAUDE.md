@@ -380,7 +380,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
       passage des 48 critères.
       _Test : checklist des critères._ [DEP-01, DEP-04, DEP-05, tous]
 - [x] **22. README final** — schéma d'architecture, comptes de test, choix justifiés, procédure d'extraction de la clé publique.
-- [ ] **23. (Optionnel) Bonus** — vérification `azp`, `correlation-id`, secret partagé Kong→backend, etc.
+- [x] **23. Bonus (partiel)** — faits : `azp`, `correlation-id`, secret partagé Kong→backend ; non faits : Redis, kong.yml depuis le JWKS.
 
 ### Questions ouvertes (à trancher avant l'étape concernée)
 - ~~**Q1 — secrets du realm**~~ → **tranché (option A)** : placeholders `${VAR}` dans `realm-annonces.json`, substitués par
@@ -443,3 +443,9 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
   (téléchargements Maven/npm) → préconstruire avec `docker compose build` avant la démo.
 - `test-gateway.ps1` : 27/27 lors de son dernier passage complet ; non rejoué après la recette (processus arrêté par
   manque de mémoire de la machine pendant que Maven/Testcontainers tournaient en parallèle) → ne pas lancer les deux en même temps.
+- **Secret partagé** : `GATEWAY_SECRET` (.env) → Kong via le vault `env` (bundled dans Kong OSS) référencé par
+  `secret_backend: "{vault://env/gateway-secret}"` (champ `referenceable = true` du schéma) → en-tête `X-Gateway-Secret`
+  → `GatewaySecretFilter` (avant HeaderAuthenticationFilter, 403 sinon). Vide = désactivé avec WARN au démarrage
+  (cas des tests d'intégration, sauf `GatewaySecretIntegrationTest`). Backend : **63 tests**.
+- Rate limiting en démo : si tu utilises l'application dans ton navigateur en même temps que les scripts, vous partagez
+  le quota de l'utilisateur (ex. alice) → 429 « inexpliqués » côté script.
