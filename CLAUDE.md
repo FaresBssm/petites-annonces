@@ -397,7 +397,7 @@ Contrainte : le fonctionnement **local** de l'énoncé (localhost:4200 / 8080 / 
       `config.json` généré par Nginx) ; valeurs par défaut = localhost. _Test : stack locale intacte (test-gateway 27/27)._
 - [x] **26. Compose de production + reverse proxy partagé** — `deploy/docker-compose.prod.yml` (images Docker Hub, aucun build),
       Caddy en reverse proxy HTTPS (seuls 80/443 ouverts), `deploy/.env.prod.example`. _Test : `docker compose config`, essai local._
-- [ ] **27. Préparation de la VM** — vérification OS, installation Docker + plugin compose, pare-feu (22, 80, 443),
+- [x] **27. Préparation de la VM** — vérification OS, installation Docker + plugin compose, pare-feu (22, 80, 443),
       dossier de déploiement, clé SSH dédiée au déploiement. _Test : `docker run hello-world` sur la VM._
 - [x] **28. Dépôt GitHub** — l'utilisateur crée le dépôt privé vide ; ajout du remote ; premier push par l'utilisateur.
 - [x] **29. Pipeline CI** — GitHub Actions : tests backend (Testcontainers), build frontend, build + push des images
@@ -503,3 +503,10 @@ Contrainte : le fonctionnement **local** de l'énoncé (localhost:4200 / 8080 / 
   remplacé à la demande de l'utilisateur par la pipeline Docker Hub + HTTPS public. Une seule session à la fois sur ce dépôt.
 - Pipeline `.github/workflows/ci-cd.yml` : tests → images Docker Hub (`latest` + SHA) → déploiement SSH **seulement si la
   variable de dépôt `DEPLOY_ENABLED=true`** (à créer après l'étape 27, avec l'accord de l'utilisateur).
+- **Mise en ligne (étape 27, 19/10/2026)** : clé de déploiement ajoutée à /root/.ssh/authorized_keys, fichiers dans
+  /opt/petites-annonces, stack `pa-*` healthy en 48 s, `ajouter-certificats.sh` : 3 certificats Let's Encrypt (exp. 17/01/2027),
+  `nginx -t` OK + reload à chaud. Vérifié : https://app.72-60-188-97.sslip.io (200), issuer https://auth…/realms/annonces,
+  https://api…/api/me → 401, http → 301 https ; autres sites du serveur OK.
+  Constat hors périmètre : qualiopilote.fr sans DNS et certificat expiré le 19/10 à 07:39 UTC (avant l'intervention).
+- Connexion en production = mots de passe de deploy/.env.prod (REALM_*_PASSWORD) ; Claude ne se connecte pas en production
+  (identifiants hors environnement local) : les tests authentifiés en prod sont faits par l'utilisateur.
