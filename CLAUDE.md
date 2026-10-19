@@ -379,7 +379,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - [x] **21. Recette complète** — `docker compose down -v` puis `up -d --build` chronométré, persistance, recherche de secrets,
       passage des 48 critères.
       _Test : checklist des critères._ [DEP-01, DEP-04, DEP-05, tous]
-- [ ] **22. README final** — schéma d'architecture, comptes de test, choix justifiés, procédure d'extraction de la clé publique.
+- [x] **22. README final** — schéma d'architecture, comptes de test, choix justifiés, procédure d'extraction de la clé publique.
 - [ ] **23. (Optionnel) Bonus** — vérification `azp`, `correlation-id`, secret partagé Kong→backend, etc.
 
 ### Questions ouvertes (à trancher avant l'étape concernée)
