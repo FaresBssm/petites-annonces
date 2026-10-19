@@ -164,6 +164,52 @@ Le password grant est interdit sur `annonces-front` (KC-04) : `get-token.ps1` re
 Sur une machine de développement, d'autres programmes peuvent occuper ces ports (un PostgreSQL local sur 5432, une autre
 application sur 8081) : `docker compose ps` fait foi pour montrer que la stack ne les publie pas.
 
+## Déploiement continu
+
+Pipeline : [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml).
+
+| Événement | Étapes |
+|---|---|
+| Pull request | `mvnw verify` (Testcontainers) → build des images backend et frontend (sans publication) |
+| Push sur `main` | idem → images publiées sur `ghcr.io/<owner>/petites-annonces-{backend,frontend}` (`sha-<commit>` + `latest`) → déploiement SSH |
+
+Le déploiement copie `docker-compose.yml`, [`docker-compose.prod.yml`](docker-compose.prod.yml), `kong/`, le realm et
+`init.sql` dans `DEPLOY_PATH`, régénère le `.env` depuis les secrets GitHub, puis lance `docker compose pull` et
+`docker compose up -d --wait`. Les images sont tirées avec le jeton éphémère du job : aucun jeton GHCR n'est stocké sur le serveur.
+
+**Serveur** : Linux avec Docker Engine et Compose ≥ 2.24.4, un utilisateur membre du groupe `docker` et une clé SSH dédiée.
+
+**Accès** : les URL de l'application restent `http://localhost:*` (`iss` des tokens, CORS, redirect URI). La surcharge de
+production ne publie donc les ports que sur `127.0.0.1` du serveur. On y accède par tunnel SSH :
+
+```bash
+ssh -L 4200:localhost:4200 -L 8080:localhost:8080 -L 8180:localhost:8180 <user>@<serveur>
+# puis http://localhost:4200 dans le navigateur local
+```
+
+Credentials à créer dans *Settings → Environments → `production`* :
+
+| Type | Nom | Valeur |
+|---|---|---|
+| Secret | `DEPLOY_HOST` | IP ou nom DNS du serveur |
+| Secret | `DEPLOY_USER` | utilisateur SSH (membre du groupe `docker`) |
+| Secret | `DEPLOY_SSH_KEY` | clé **privée** SSH dédiée au déploiement (la publique dans `~/.ssh/authorized_keys` du serveur) |
+| Secret | `DEPLOY_KNOWN_HOSTS` | sortie de `ssh-keyscan -p <port> <serveur>` (empreinte vérifiée du serveur) |
+| Secret | `POSTGRES_PASSWORD` | mot de passe du superutilisateur PostgreSQL |
+| Secret | `KEYCLOAK_DB_PASSWORD` | mot de passe de la base `keycloak` |
+| Secret | `ANNONCES_DB_PASSWORD` | mot de passe de la base `annonces` |
+| Secret | `KC_BOOTSTRAP_ADMIN_PASSWORD` | mot de passe de la console Keycloak |
+| Secret | `REALM_ALICE_PASSWORD`, `REALM_BOB_PASSWORD`, `REALM_MODO_PASSWORD`, `REALM_ADMIN_PASSWORD` | mots de passe des comptes de test |
+| Secret | `REALM_RSA_PRIVATE_KEY` | clé privée du realm : **doit correspondre** à la clé publique de `kong/kong.yml` (voir « Clé de signature du realm ») |
+| Secret | `GATEWAY_SECRET` | secret partagé Kong → backend (`openssl rand -hex 24`) |
+| Variable *(optionnelle)* | `DEPLOY_PORT` | port SSH (défaut `22`) |
+| Variable *(optionnelle)* | `DEPLOY_PATH` | dossier de la stack sur le serveur (défaut `/opt/petites-annonces`) |
+| Variable *(optionnelle)* | `POSTGRES_USER`, `KEYCLOAK_DB_USER`, `ANNONCES_DB_USER`, `KC_BOOTSTRAP_ADMIN_USERNAME` | défauts : `postgres`, `keycloak`, `annonces`, `admin` |
+
+`GITHUB_TOKEN` est fourni automatiquement (publication et lecture des images GHCR). Les mots de passe des bases et des
+comptes du realm ne sont appliqués qu'au **premier** démarrage (volume vide, import du realm) : pour les changer ensuite,
+le faire aussi dans PostgreSQL et Keycloak, ou réinitialiser avec `docker compose down -v` sur le serveur.
+
 ## Arborescence
 
 ```
@@ -176,5 +222,7 @@ keycloak/realm-public-key.pem   clé publique de la paire RSA fixe du realm
 postgres/init.sql               création des bases keycloak et annonces
 scripts/                        get-token, forge-jwt, test-gateway (PowerShell + curl)
 docker-compose.yml              5 services, réseaux public / internal
+docker-compose.prod.yml         surcharge de production (images GHCR, ports sur 127.0.0.1)
+.github/workflows/ci-cd.yml     CI (tests, images) et déploiement SSH
 .env.example                    variables (valeurs de démo) à copier en .env
 ```
