@@ -85,7 +85,7 @@ services:
           # sur tous les endpoints /api/**. Au-delà : 429 + Retry-After, le backend n'est pas appelé.
           - name: rate-limiting
             config:
-              minute: 3
+              minute: 10
               policy: local
               limit_by: header
               header_name: X_USER_ID
