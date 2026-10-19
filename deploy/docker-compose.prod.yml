@@ -96,6 +96,10 @@ services:
   gateway:
     image: kong:3.9.4
     container_name: pa-gateway
+    # Empreinte de kong.yml / render-config.sh / plugin (calculée par la CI) : la config est montée en volume,
+    # donc sans ce label "up -d" ne recréerait pas Kong et il garderait l'ancienne configuration.
+    labels:
+      com.petitesannonces.kong-config: ${KONG_CONFIG_HASH:-inconnu}
     # Génère la configuration de production à partir de kong/kong.yml, puis lance Kong
     entrypoint: ["/bin/sh", "/kong/render-config.sh"]
     environment:
