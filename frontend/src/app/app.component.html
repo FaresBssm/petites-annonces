@@ -4,6 +4,13 @@
   <nav class="menu">
     <a routerLink="/annonces" routerLinkActive="actif" [routerLinkActiveOptions]="{ exact: true }">Annonces</a>
     <a routerLink="/mes-annonces" routerLinkActive="actif">Mes annonces</a>
+    <!-- Entrées masquées selon les rôles du token (FR-03) : confort d'affichage, pas une sécurité -->
+    @if (auth.aLeRole('MODERATEUR')) {
+      <a routerLink="/moderation" routerLinkActive="actif">Modération</a>
+    }
+    @if (auth.aLeRole('ADMIN')) {
+      <a routerLink="/categories" routerLinkActive="actif">Catégories</a>
+    }
     <a routerLink="/profil" routerLinkActive="actif">Mon profil</a>
   </nav>
 

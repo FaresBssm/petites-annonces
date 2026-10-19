@@ -372,7 +372,7 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
       _Test : onglet réseau ; provoquer 403 et 429._ [FR-01, FR-05, FR-06]
 - [x] **19. Écrans annonces** — liste paginée + filtre, détail, mes annonces, formulaire création/modification.
       _Test : parcours alice dans le navigateur._ [MT-01…MT-04 via UI]
-- [ ] **20. Modération, catégories, guards** — écrans MODERATEUR/ADMIN, menus et routes selon les rôles.
+- [x] **20. Modération, catégories, guards** — écrans MODERATEUR/ADMIN, menus et routes selon les rôles.
       _Test : alice / modo / admin._ [FR-03, MT-06, MT-08 via UI]
 
 ### Phase F — Finalisation
@@ -433,3 +433,8 @@ Chaque étape est testable en moins d'une heure. Critères entre crochets = crit
 - `KONG_PORT_MAPS=8080:8000` : sans lui, X-Forwarded-Port = 8000 et la Location du 201 pointe sur un port interne.
 - PowerShell 5.1 : `[Text.Encoding]::UTF8` ajoute un **BOM** aux données envoyées à un exe natif (JSON → 400) ;
   utiliser `New-Object System.Text.UTF8Encoding $false`.
+- Frontend vérifié dans Chrome : KC-01/02/03/06, FR-01→06, parcours alice (création) → modo (publication) → liste publique.
+- Retour après login : le chemin demandé est passé **brut** à `initCodeFlow` (la librairie l'encode dans `state`) et restauré
+  par `history.replaceState` **avant** la navigation initiale du routeur (une navigation programmée serait écrasée).
+- 429 : `erreursInterceptor` rejoue automatiquement une fois les **GET** après Retry-After (écran rempli tout seul) ;
+  les écritures ne sont jamais rejouées. Démo FR-06 : modo ouvre `/annonces/<id d'alice>/modifier` et enregistre → 403.

@@ -27,6 +27,7 @@ export class CategorieService {
         this.categories.set(liste);
         this.chargement = false;
       },
+      // (un 429 sur ce GET est déjà rejoué automatiquement par erreursInterceptor)
       error: () => (this.chargement = false),
     });
   }

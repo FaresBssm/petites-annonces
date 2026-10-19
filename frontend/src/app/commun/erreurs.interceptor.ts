@@ -1,6 +1,6 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, throwError } from 'rxjs';
+import { catchError, retry, throwError, timer } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { config } from '../config';
 import { NotificationService } from './notification.service';
@@ -15,8 +15,22 @@ export const erreursInterceptor: HttpInterceptorFn = (requete, suivant) => {
   }
   const auth = inject(AuthService);
   const notifications = inject(NotificationService);
+  const delaiRetryAfter = (erreur: HttpErrorResponse) => Number(erreur.headers.get('Retry-After')) || 60;
 
   return suivant(requete).pipe(
+    // 429 sur une LECTURE : compte à rebours puis nouvel essai automatique, l'écran se remplit seul.
+    // Les écritures ne sont jamais rejouées : l'utilisateur garde la main.
+    retry({
+      count: 1,
+      delay: (erreur: HttpErrorResponse) => {
+        if (requete.method === 'GET' && erreur.status === 429) {
+          const secondes = delaiRetryAfter(erreur);
+          notifications.limiteAtteinte(secondes);
+          return timer((secondes + 1) * 1000);
+        }
+        return throwError(() => erreur);
+      },
+    }),
     catchError((erreur: HttpErrorResponse) => {
       switch (erreur.status) {
         case 401:
@@ -27,12 +41,10 @@ export const erreursInterceptor: HttpInterceptorFn = (requete, suivant) => {
           // FR-06 : message, sans déconnexion
           notifications.erreur('Accès refusé : vous n\'avez pas les droits nécessaires pour cette action.');
           break;
-        case 429: {
+        case 429:
           // FR-05 : délai lu dans Retry-After (exposé par le plugin cors de Kong)
-          const secondes = Number(erreur.headers.get('Retry-After')) || 60;
-          notifications.limiteAtteinte(secondes);
+          notifications.limiteAtteinte(delaiRetryAfter(erreur));
           break;
-        }
         case 0:
           notifications.erreur('API injoignable : la gateway ne répond pas.');
           break;

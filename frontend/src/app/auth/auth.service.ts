@@ -1,5 +1,4 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 import { OAuthService } from 'angular-oauth2-oidc';
 import { filter } from 'rxjs';
 import { authConfig } from './auth.config';
@@ -20,7 +19,6 @@ interface ClaimsAccessToken {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly oauth = inject(OAuthService);
-  private readonly router = inject(Router);
 
   private readonly jeton = signal<string | null>(null);
 
@@ -71,17 +69,20 @@ export class AuthService {
     this.oauth.setupAutomaticSilentRefresh();
     this.synchroniser();
 
-    // Retour sur la page demandée avant le login (mémorisée dans le paramètre state)
+    // Retour sur la page demandée avant le login (mémorisée dans le paramètre state).
+    // On réécrit l'URL AVANT le démarrage du routeur : sa navigation initiale part de la bonne page
+    // (une navigation programmée ici serait écrasée par la navigation initiale).
     const cible = this.oauth.state ? decodeURIComponent(this.oauth.state) : '';
-    if (cible.startsWith('/') && cible !== '/') {
-      queueMicrotask(() => this.router.navigateByUrl(cible));
+    if (cible.startsWith('/') && !cible.startsWith('//') && cible !== '/') {
+      history.replaceState(history.state, '', cible);
     }
   }
 
   /** Redirection vers Keycloak : response_type=code, code_challenge, code_challenge_method=S256 (KC-02). */
   seConnecter(): void {
+    // Chemin brut : la librairie l'encode elle-même dans le paramètre state
     const ici = window.location.pathname + window.location.search;
-    this.oauth.initCodeFlow(encodeURIComponent(ici));
+    this.oauth.initCodeFlow(ici);
   }
 
   /** Ferme la session Keycloak via l'endpoint end_session (KC-06), puis revient sur l'application. */
